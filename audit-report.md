@@ -451,12 +451,14 @@ The check is `<=` not `<`, so `a === -Math.PI` becomes `a = Math.PI`, but the do
 
 ### Remaining Items (not bugs, monitor only)
 
-- S1/S2: Zero noise makes particle filter trivial — intentional for demo
+- S1/S2: Noise is now enabled (1% linear, 1.5% angular odometry; 0.01m LiDAR range noise, 0.2% spurious rate). Particle filter is active and functional. The audit originally flagged zero noise, which has since been corrected in DEFAULT_SIMULATION_CONFIG.
 - S4: `isPositionOccupied` single-cell check — mitigated by LiDAR-only node creation
 - SU1: Side wall avoidance gain could oscillate in narrow corridors — not confirmed
 - SU2: Wall-stop uses distance from start, not recent progress — edge case with circular paths
 - SU5: Corridor analysis projects to A->B line, not actual curved path — edge case
-- M3/M4/M5: Minor naming/config issues, no functional impact
+- M3: `findGridFrontier` duplication resolved — ExplorationStrategy was removed as dead code
+- M4: `DEFAULT_MOTOR_CONFIG.robot_radius` corrected from 0.05 to 0.25
+- M5: `normalizeAngle` boundary behavior is correct per its documented contract
 
 ### Diagnostic Results
 

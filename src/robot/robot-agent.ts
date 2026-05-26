@@ -1,13 +1,12 @@
 // ===========================================================================
-// Robot Agent — 5-Step Exploration Cycle
+// Robot Agent — 4-Phase Exploration Cycle
 //
 // Robots do NOT share information except through the Gun protocol.
 // Each robot independently:
-//   1. ARRIVE at a target node (starting location is the first node)
-//   2. SCAN: identify new unvisited nodes in every direction
-//   3. CONNECT: identify untraveled edges via LOS check within scan radius
-//   4. CHOOSE: pick an edge using exploration priority
-//   5. TRAVEL: drive to destination, collecting corridor scans for
+//   1. ARRIVING: reach target node (starting location is the first node)
+//   2. SCANNING: identify new nodes + edges via LiDAR feature detection
+//   3. CHOOSING: pick next edge using exploration priority
+//   4. TRAVELING: drive to destination, collecting corridor scans for
 //      retroactive junction detection on arrival
 // ===========================================================================
 
@@ -1498,8 +1497,6 @@ export class RobotAgent {
   }
 
   // =========================================================================
-  // Direction-Aware Node Suppression
-  // =========================================================================
   // Grid Frontier Detection (fallback)
   // =========================================================================
 
@@ -1534,11 +1531,6 @@ export class RobotAgent {
     return null;
   }
 
-  /**
-   * Check line-of-sight between robot position and a target using the SLAM
-   * occupancy grid. Walks the grid in steps of resolution and returns false
-   * if any occupied cell is encountered along the path.
-   */
   // =========================================================================
   // Merge Protocol — Robot-Side Discovery
   // =========================================================================
@@ -1600,12 +1592,6 @@ export class RobotAgent {
     this.subscriber.flushPendingNodes();
   }
 
-  /**
-   * Check LiDAR-based line of sight from the robot's current position to a target.
-   * Uses the MINIMUM range in a narrow cone — if ANY ray hits a wall before
-   * the target distance, the path is blocked. This can only be called when
-   * the robot is at fromX/fromY (it reads the last LiDAR scan).
-   */
   /**
    * Check LOS and find the best clear path within ±10° of the target.
    * Returns { clear, bestAngle } — the angle that maximizes wall clearance.

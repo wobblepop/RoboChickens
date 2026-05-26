@@ -144,6 +144,7 @@ header h1{font-size:16px;font-weight:500;color:var(--gold);white-space:nowrap}
 </div>
 <script>
 (function(){
+  function esc(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
   const ROBOT_COLORS = ['#ff5252','#69f0ae','#ffd740','#40c4ff','#ea80fc','#ff6e40'];
   const TIER_COLORS = {dead:'#444441',candidate:'#854F0B',provisional:'#c9a84c',committed:'#5ec4b6',anchored:'#e8c170'};
   const CELL_COLORS = {'#':'#2c2c2a','.':'#3a3a4a','D':'#c9a84c','O':'#854F0B','P':'#5F5E5A','~':'#3B6D11'};
@@ -337,29 +338,29 @@ header h1{font-size:16px;font-weight:500;color:var(--gold);white-space:nowrap}
 
     // Scrollable details section
     html += '<div class="node-info-details">';
-    html += row('ID', info.id || '?');
-    html += row('Type', info.type || '?');
+    html += row('ID', esc(info.id) || '?');
+    html += row('Type', esc(info.type) || '?');
     html += row('Position', '('+Number(info.x).toFixed(1)+', '+Number(info.y).toFixed(1)+')');
     html += row('Confidence', info.confidence != null ? Number(info.confidence).toFixed(3) : '?');
-    html += row('Tier', info.tier || '?');
-    html += row('Observations', info.observationCount ?? '?');
-    html += row('Explored', info.explored ? 'yes (' + (info.exploredBy || []).join(', ') + ')' : 'no');
-    html += row('Stability', info.stabilityClass || '?');
-    html += row('Created', info.createdAt ? new Date(info.createdAt).toLocaleString() : '?');
-    html += row('Last observed', info.lastObserved ? new Date(info.lastObserved).toLocaleString() : '?');
+    html += row('Tier', esc(info.tier) || '?');
+    html += row('Observations', esc(info.observationCount ?? '?'));
+    html += row('Explored', info.explored ? 'yes (' + esc((info.exploredBy || []).join(', ')) + ')' : 'no');
+    html += row('Stability', esc(info.stabilityClass) || '?');
+    html += row('Created', info.createdAt ? esc(new Date(info.createdAt).toLocaleString()) : '?');
+    html += row('Last observed', info.lastObserved ? esc(new Date(info.lastObserved).toLocaleString()) : '?');
     html += row('Is frontier', info.isFrontier ? 'yes' : 'no');
-    html += row('Edge count', info.edgeCount ?? '?');
+    html += row('Edge count', esc(info.edgeCount ?? '?'));
 
     if(info.edges && info.edges.length > 0){
-      html += '<div class="node-info-section">Connected Edges ('+info.edges.length+')</div>';
+      html += '<div class="node-info-section">Connected Edges ('+esc(info.edges.length)+')</div>';
       html += '<div class="edge-list">';
       for(const edge of info.edges){
         const targetId = edge.targetNodeId || edge.sourceNodeId || '?';
         const dir = edge.targetNodeId ? 'to' : 'from';
         html += '<div class="edge-list-item">'
-          + dir + ' ' + targetId.substring(0,8) + '...'
+          + esc(dir) + ' ' + esc(targetId.substring(0,8)) + '...'
           + ' | dist: ' + (edge.distance != null ? Number(edge.distance).toFixed(1) : '?')
-          + ' | tier: ' + (edge.tier || '?')
+          + ' | tier: ' + (esc(edge.tier) || '?')
           + (edge.traveled ? ' | traveled' : ' | untraveled')
           + '</div>';
       }
@@ -448,22 +449,22 @@ header h1{font-size:16px;font-weight:500;color:var(--gold);white-space:nowrap}
       return ' @ ' + (Number(p.theta) * 180 / Math.PI).toFixed(1) + '°';
     }
 
-    let html = '<h3>Robot ' + (info.robotId || '?') + ' <button class="close-btn" id="close-node-info">&times;</button></h3>';
+    let html = '<h3>Robot ' + esc(info.robotId || '?') + ' <button class="close-btn" id="close-node-info">&times;</button></h3>';
     html += '<div class="node-info-details">';
-    html += row('Status', info.status || '?');
-    html += row('Mode', (behaviorModes[info.behaviorMode] || info.behaviorMode || '?'));
+    html += row('Status', esc(info.status) || '?');
+    html += row('Mode', esc(behaviorModes[info.behaviorMode] || info.behaviorMode || '?'));
     html += row('Actual pos', fmtPos(info.worldPose) + fmtAngle(info.worldPose));
     html += row('Believed pos', fmtPos(info.believedPose) + fmtAngle(info.believedPose));
     html += row('SLAM pos', fmtPos(info.slamPose) + fmtAngle(info.slamPose));
     html += row('Position error', (info.positionError != null ? info.positionError.toFixed(3) : '?') + ' m');
     html += row('Cumul. drift', (info.cumulativeDrift != null ? info.cumulativeDrift.toFixed(3) : '?') + ' m');
     html += row('Target pos', fmtPos(info.targetPosition));
-    html += row('Target node', info.targetNodeId ? info.targetNodeId.substring(0, 12) + '...' : 'none');
-    html += row('Current node', info.currentNodeId ? info.currentNodeId.substring(0, 12) + '...' : 'none');
-    html += row('Active edge', info.activeEdgeId ? info.activeEdgeId.substring(0, 12) + '...' : 'none');
-    html += row('Tick', info.tickCount ?? '?');
-    html += row('Nodes found', info.nodesDiscovered ?? '?');
-    html += row('Edges found', info.edgesDiscovered ?? '?');
+    html += row('Target node', info.targetNodeId ? esc(info.targetNodeId.substring(0, 12)) + '...' : 'none');
+    html += row('Current node', info.currentNodeId ? esc(info.currentNodeId.substring(0, 12)) + '...' : 'none');
+    html += row('Active edge', info.activeEdgeId ? esc(info.activeEdgeId.substring(0, 12)) + '...' : 'none');
+    html += row('Tick', esc(info.tickCount ?? '?'));
+    html += row('Nodes found', esc(info.nodesDiscovered ?? '?'));
+    html += row('Edges found', esc(info.edgesDiscovered ?? '?'));
     html += '</div>';
 
     popup.innerHTML = html;
@@ -487,14 +488,14 @@ header h1{font-size:16px;font-weight:500;color:var(--gold);white-space:nowrap}
     }
 
     let html = '<h3>Edge Details <button class="close-btn" id="close-node-info">&times;</button></h3>';
-    html += row('ID', info.id ? info.id.substring(0,12)+'...' : '?');
-    html += row('Type', info.type || '?');
-    html += row('Source', info.sourceNodeId ? info.sourceNodeId.substring(0,8)+'...' : '?');
-    html += row('Target', info.targetNodeId ? info.targetNodeId.substring(0,8)+'...' : '?');
+    html += row('ID', info.id ? esc(info.id.substring(0,12))+'...' : '?');
+    html += row('Type', esc(info.type) || '?');
+    html += row('Source', info.sourceNodeId ? esc(info.sourceNodeId.substring(0,8))+'...' : '?');
+    html += row('Target', info.targetNodeId ? esc(info.targetNodeId.substring(0,8))+'...' : '?');
     html += row('Distance', info.distance != null ? Number(info.distance).toFixed(1) : '?');
     html += row('Confidence', info.confidence != null ? Number(info.confidence).toFixed(3) : '?');
-    html += row('Tier', info.tier || '?');
-    html += row('Status', info.status || '?');
+    html += row('Tier', esc(info.tier) || '?');
+    html += row('Status', esc(info.status) || '?');
     html += row('Traveled', info.traveled ? 'yes' : 'no');
     html += row('Bidirectional', String(info.bidirectional));
     html += row('Observations', String(info.observationCount || 0));
@@ -970,15 +971,15 @@ header h1{font-size:16px;font-weight:500;color:var(--gold);white-space:nowrap}
       div.className = 'robot-status';
       div.id = 'robot-'+i;
 
-      let modeSelect = '<select class="mode-select" data-robot-id="'+r.id+'">';
+      let modeSelect = '<select class="mode-select" data-robot-id="'+esc(r.id)+'">';
       for(const [val, label] of Object.entries(behaviorModes)){
         const selected = (robotModes[r.id] === val) ? ' selected' : '';
-        modeSelect += '<option value="'+val+'"'+selected+'>'+label+'</option>';
+        modeSelect += '<option value="'+esc(val)+'"'+selected+'>'+esc(label)+'</option>';
       }
       modeSelect += '</select>';
 
       div.innerHTML = '<span class="robot-dot" style="background:'+ROBOT_COLORS[i%ROBOT_COLORS.length]+'"></span>'
-        +'<span class="robot-name">'+(r.id||'Robot '+(i+1))+'</span>'
+        +'<span class="robot-name">'+esc(r.id||'Robot '+(i+1))+'</span>'
         +'<span class="status-badge">idle</span>'
         +modeSelect
         +'<br><span class="robot-info"></span>';

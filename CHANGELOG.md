@@ -3,7 +3,7 @@
 ## 2026-05-25: Major Rebuild
 
 ### New Robot Exploration Algorithm
-- Replaced old SCANNING/PLANNING/TRAVELING 3-phase model with 7-step exploration cycle
+- Replaced old SCANNING/PLANNING/TRAVELING 3-phase model with 4-phase exploration cycle (ARRIVING → SCANNING → CHOOSING → TRAVELING)
 - Robots only create nodes at features (turns, junctions, dead ends, side openings) — not in straight corridors
 - Edges created only via LiDAR line-of-sight from the robot's current position (minimum range in cone, not average)
 - Mid-edge scanning at 50% of travel distance discovers nodes and edges from corridor midpoints

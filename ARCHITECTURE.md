@@ -1,6 +1,6 @@
 # SLAM Explorer — System Architecture
 
-**Last updated:** 2026-05-25
+**Last updated:** 2026-05-26
 
 ## Overview
 
@@ -8,42 +8,33 @@ A real-time, multi-robot warehouse exploration and mapping system. Robots autono
 
 The system has two layers: a **world simulation** (ground truth, physics, sensors) that only the server knows about, and **robot agents** that receive only noisy sensor data and must build their maps from scratch.
 
-## Robot Exploration Algorithm (7-Step Cycle)
+## Robot Exploration Algorithm (4-Phase Cycle)
 
 Each robot follows this cycle continuously:
 
-1. **ARRIVE** at a target node (starting position is the first node)
+1. **ARRIVING** — Robot reaches target node (or creates starting node on tick 1)
    - Mark node as explored, capture SLAM data
-   - Run drift correction against stored node map (if revisiting)
-   - Propagate corrections to connected unexplored nodes
+   - Run scan matching refinement at node (`refinePoseAtNode`)
+   - Analyze corridor scan log for retroactive junction detection
+   - Create/update node local map
 
-2. **SCAN** — identify new unvisited nodes in every direction
+2. **SCANNING** — 5-tick pause, then feature detection + node/edge creation
    - 360-degree LiDAR feature detection (junctions, corners, dead ends, side openings)
    - Suppress node creation in straight corridors (only at turns/features)
-   - Avoid placing nodes at max LiDAR range
-
-3. **CONNECT** — identify untraveled edges via LiDAR visibility check
-   - For all nodes within scan radius, check line-of-sight (minimum range in a narrow cone)
-   - Create untraveled edges (dashed lines) for verified visibility connections
+   - Create untraveled edges to visible nodes via LiDAR line-of-sight
    - Revalidate existing edges: mark blocked if no longer visible, reopen if visible again
+   - Periodic freshness decay and dead-entity pruning
 
-4. **CHOOSE** an edge to travel, using priority:
+3. **CHOOSING** — Pick next edge via exploration priority
    - Manual path queue (if user clicked a target — BFS through graph, hop by hop)
-   - Adjacent nodes that haven't been explored
-   - Edges that haven't been traveled
-   - Adjacent nodes with the most unmapped edges
-   - Random edge (last resort)
+   - Behavior mode strategy (8 selectable modes)
+   - Fallback: unexplored adjacent nodes > untraveled edges > neighbors with most unmapped edges > grid frontier > random
 
-5. **TRAVEL** to 50% of the edge length
-   - SLAM continues mapping the corridor during travel
+4. **TRAVELING** — Drive to destination, collect corridor scans
+   - Reactive navigation with wall avoidance and corridor centering
    - Side-passage detection creates junction nodes at perpendicular openings
-   - Loop closure checked every 20 ticks
-
-6. **MID-SCAN** — repeat steps 2-3 at the midpoint
-   - Discover nodes and edges visible from the corridor midpoint
-   - Edges only radiate from the nearest existing node (never between two remote nodes)
-
-7. **COMPLETE** — travel to the destination node, restart from step 1
+   - Corridor scan log captures LiDAR data for retroactive junction detection on arrival
+   - Stuck detection and recovery (wall-stop, timeout, reversal)
 
 ## System Layers
 
@@ -56,19 +47,10 @@ Each robot follows this cycle continuously:
 |  SLAM Engine (particle filter + occupancy grid + scan matching)  |
 |  Feature Detection | Treadmill Edge/Node Maps                   |
 |  Network Graph | Graph Publisher/Subscriber (Gun.js)             |
-|  Drift Corrector | Loop Closure Detector                        |
-+------------------------------------------------------------------+
-|                    VALIDATION + SCORING                           |
-|  Confidence Scorer (5-factor multiplicative)                     |
-|  Consistency Engine (5 topological checks)                       |
-|  Regression Controller (quarantine + rollback)                   |
+|  Motor Controller | Behavior Modes                               |
 +------------------------------------------------------------------+
 |                    MERGE PROTOCOL                                 |
-|  Candidate Detector | Graph Aligner | Graph Merger               |
-+------------------------------------------------------------------+
-|                    NAVIGATION                                     |
-|  A* Path Planner | D* Lite Replanner | Motor Controller          |
-|  Exploration Strategy | Manual Target (BFS hop-by-hop)           |
+|  Candidate Detector | Graph Aligner (Umeyama similarity)         |
 +------------------------------------------------------------------+
 ```
 
@@ -95,15 +77,15 @@ Each robot follows this cycle continuously:
 ## SLAM Pipeline
 
 1. **Particle Filter** (30 particles, GMapping-style)
-   - Motion model with Gaussian odometry noise (1% linear, 2% angular)
+   - Motion model with Gaussian odometry noise
    - Particle weighting by scan-to-map agreement (no per-tick pose snapping)
    - Low-variance systematic resampling
    - Single shared occupancy grid updated by best particle
    - First tick: exact origin placement (no particle noise on starting node)
 
-2. **Occupancy Grid** — log-odds Float32Array, 0.1m resolution, 60m grid
-3. **Inverse Sensor Model** — Bresenham ray tracing per LiDAR beam
-4. **Scan Matching** — runs ONLY at node arrivals (not during travel)
+2. **Occupancy Grid** — log-odds Float32Array, 0.1m resolution, 80m grid
+3. **Inverse Sensor Model** — Bresenham ray tracing per LiDAR beam, wall thickening on 4-connected neighbors
+4. **Scan Matching** — runs ONLY at node arrivals (`refinePoseAtNode`), not during travel
    - Prevents tunnel-axis drift in straight corridors
    - Balanced objective: min(α * topology_mismatch + β * displacement²)
    - Both terms normalized to comparable scales (scan score / window²)
@@ -112,15 +94,10 @@ Each robot follows this cycle continuously:
 
 ## Confidence Model
 
-Multiplicative 5-factor model: `C = C_source^0.20 * C_obs^0.15 * C_consist^0.25 * C_corrob^0.25 * C_fresh^0.15`
-
-| Factor | Description |
-|--------|-------------|
-| Source | Weighted mean of source-type credibility (sensor=0.85, peer=0.70, plan=0.60, manual=0.50) |
-| Observation | Diminishing returns: 1 - e^(-0.25 * count) |
-| Consistency | From topological checks (degree, distance, angular, crossing, region) |
-| Corroboration | 1 source=0.4, 2 agreeing=0.65, 3+=0.85, disagreeing=min*0.6 |
-| Freshness | Static=1.0 always, SemiStatic=e^(-0.005*h), Dynamic=e^(-0.05*h) |
+Confidence values are assigned at creation and updated through observation:
+- Nodes: initial confidence from feature detection quality, increased via `strengthenNode` (diminishing returns curve: `1 - exp(-0.25 * count)`)
+- Edges: initial confidence based on traveled/untraveled status
+- Freshness decay: exponential decay based on stability class (static features never decay, semi-static/dynamic features lose confidence over sim-minutes)
 
 ### Tiers
 | Score | Tier | Behavior |
@@ -131,27 +108,19 @@ Multiplicative 5-factor model: `C = C_source^0.20 * C_obs^0.15 * C_consist^0.25 
 | 0.65-0.85 | Committed | Full member |
 | 0.85-1.00 | Anchored | Reference point |
 
-## Drift Correction
-
-Three mechanisms:
-1. **Map correlation at nodes** — on revisit, cross-correlate fresh SLAM grid with stored node map over a ±2m search window to find the (dx,dy) offset minimizing squared error
-2. **Loop closure during travel** — every 20 ticks, scan-match against stored reference scans at nearby nodes; apply 30% partial correction
-3. **Neighbor propagation** — after correcting a node, shift connected unexplored nodes proportionally (explored nodes are anchored)
-
 ## Multi-Robot Merge Protocol
 
-6-phase sequence:
-1. **Candidate Detection** — broadcast node summaries, match by geometry+features+topology
-2. **Evaluation** — per-dimension floors (geometry>0.6, features>0.4, topology>0.5), composite>0.70
+Simplified 3-step alignment:
+1. **Candidate Detection** — Generate node summaries, match by geometry + feature + topology similarity
+2. **Evaluation** — Per-dimension floors (geometry>0.6, features>0.4, topology>0.5), composite>0.70
 3. **Alignment** — Umeyama similarity transform (1 anchor=translation, 2=similarity, 3+=residual-qualified)
-4. **Merge** — union observation logs, remap edges, transform coordinates
-5. **Peer Connection** — establish Gun.js sync
-6. **Post-Merge Validation** — consistency checks on merged subgraph
 
-## Environment Dynamics (Trimming)
+After alignment, the subscriber transforms incoming external node positions into the local SLAM frame. The world server can also establish alignment using known starting positions (pure translation offset).
+
+## Environment Dynamics
 
 When the environment changes (walls moved, paths blocked):
-- **Freshness decay** — dynamic features lose confidence exponentially
+- **Freshness decay** — dynamic features lose confidence exponentially (sim-minutes timescale)
 - **Edge revalidation** — on node revisit, edges no longer visible become "blocked" (not deleted)
 - **Dead pruning** — only speculative entities are removed; traveled edges and explored nodes persist as blocked/archived
 - **Map editing** — browser UI can place/remove walls; changes update the ground truth immediately
@@ -161,20 +130,23 @@ When the environment changes (walls moved, paths blocked):
 ```
 slam-explorer/
   src/
-    shared/          Types, math, protocol, Gun.js adapters
-    world/           Server: physics, sensors, ground truth, visualization
+    shared/          Types, math, geometry, protocol, events, UUID,
+                     Gun.js adapters (in-process + real network)
+    world/           Server: ground truth map, physics engine,
+                     LiDAR/odometry simulation, robot connection,
+                     visualization WebSocket
     robot/
-      slam/          Particle filter, occupancy grid, scan matching
-      network/       Graph storage, publisher, subscriber, loop closure
-      navigation/    Path planning (A*, D* Lite), motor control, exploration
+      slam/          Particle filter, occupancy grid, scan matching,
+                     inverse sensor model
+      network/       Topological graph, graph publisher/subscriber
+      navigation/    Motor controller (reactive wall avoidance)
       treadmill/     Node/edge local maps (SLAM data per entity)
-      merge/         Multi-robot merge protocol (detect, align, merge)
+      merge/         Candidate detector, Umeyama alignment
       feature-detection/  LiDAR feature extraction
-      (root)         Robot agent, observation log, confidence, consistency,
-                     regression, drift correction, spatial index
+      behavior/      8 behavior mode strategy functions
+      (root)         Robot agent (main exploration loop)
   public/            Browser visualization (single index.html)
   warehouse-maps/    ASCII map files
-  tests/             Jest test suite
 ```
 
 ## Default Configuration
@@ -182,10 +154,10 @@ slam-explorer/
 | Parameter | Value |
 |-----------|-------|
 | LiDAR rays | 360, full 360°, 8m range |
-| Odometry noise | 1% linear, 2% angular |
+| Odometry noise | 1% linear, 1.5% angular |
 | Robot radius | 0.25m |
 | SLAM particles | 30 |
-| SLAM grid | 0.1m resolution, 60m |
+| SLAM grid | 0.1m resolution, 80m |
 | Node separation | 2.5m minimum |
 | Tick interval | 100ms |
-| Max speed | 3.0 m/s linear, 10.0 rad/s angular |
+| Max speed | 3.0 m/s linear, 3.0 rad/s angular |

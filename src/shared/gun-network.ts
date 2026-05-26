@@ -13,6 +13,7 @@
 // ===========================================================================
 
 import type { NetworkNode, NetworkEdge, ObservationRecord } from "./types";
+import { EdgeStatus } from "./types";
 import type { IGraphNetwork } from "../robot/network/graph-publisher";
 import type { IGraphNetworkSubscriber } from "../robot/network/graph-subscriber";
 
@@ -386,7 +387,7 @@ export class GunNetwork implements IGraphNetwork, IGraphNetworkSubscriber {
         clearance_height: Infinity,
         surface_type: "unknown",
         slope: 0,
-        status: "unknown" as any,
+        status: EdgeStatus.Unknown,
         restrictions: [],
       },
       stability_class: data.stability_class ?? "static",

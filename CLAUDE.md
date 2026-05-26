@@ -56,11 +56,11 @@ This workflow applies to any task that changes code (new features, bug fixes, re
 
 ## Key Architecture
 
-### Exploration Cycle (4 phases, 5 logical steps)
+### Exploration Cycle (4 phases)
 
 1. **ARRIVING** — Robot reaches target node (or creates starting node on tick 1)
 2. **SCANNING** — 5-tick pause, then feature detection + node/edge creation
-3. **CHOOSING** — Pick next edge via exploration priority (manual path > unexplored > untraveled > unmapped neighbors > random)
+3. **CHOOSING** — Pick next edge via exploration priority (manual path > behavior mode > unexplored > untraveled > unmapped neighbors > random)
 4. **TRAVELING** — Drive to destination, collect corridor scans for retroactive junction detection
 
 ### Critical Files

@@ -12,7 +12,7 @@ export const DEFAULT_MOTOR_CONFIG: MotorControllerConfig = {
   max_linear_speed: 2.5,
   max_angular_speed: 8.0,
   ahead_clear_threshold: 0.8,
-  robot_radius: 0.05,
+  robot_radius: 0.25,
 };
 
 export class MotorController {

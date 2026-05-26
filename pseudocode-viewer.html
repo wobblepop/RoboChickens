@@ -82,6 +82,53 @@
     border-color: var(--phase);
   }
 
+  /* ── Tab Bar ────────────────────────────────────────────────── */
+
+  .tab-bar {
+    display: flex;
+    background: var(--bg-section);
+    border-bottom: 2px solid var(--border);
+    padding: 0 40px;
+    gap: 0;
+    overflow-x: auto;
+  }
+
+  .tab-btn {
+    background: transparent;
+    color: var(--text-dim);
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 12px 24px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+    white-space: nowrap;
+    margin-bottom: -2px;
+  }
+
+  .tab-btn:hover {
+    color: var(--text);
+    background: var(--bg-hover);
+  }
+
+  .tab-btn.active {
+    color: var(--phase);
+    border-bottom-color: var(--phase);
+    font-weight: 600;
+  }
+
+  /* ── Tab Content ────────────────────────────────────────────── */
+
+  .tab-content {
+    display: none;
+  }
+
+  .tab-content.active {
+    display: block;
+  }
+
   /* ── Legend ──────────────────────────────────────────────────── */
 
   .legend {
@@ -376,15 +423,328 @@
     width: 100%;
   }
 
+  /* ── Executive Summary ──────────────────────────────────────── */
+
+  .summary-section {
+    margin-bottom: 32px;
+  }
+
+  .summary-section h2 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--phase);
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .summary-paragraph {
+    color: var(--text);
+    font-size: 13px;
+    line-height: 1.7;
+    max-width: 800px;
+  }
+
+  .metric-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+    margin-top: 8px;
+  }
+
+  .metric-card {
+    background: var(--bg-section);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 16px;
+    text-align: center;
+  }
+
+  .metric-card .metric-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--phase);
+    display: block;
+  }
+
+  .metric-card .metric-label {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 4px;
+    display: block;
+  }
+
+  .arch-layers {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-top: 8px;
+  }
+
+  .arch-layer {
+    background: var(--bg-section);
+    border: 1px solid var(--border);
+    padding: 14px 18px;
+    position: relative;
+  }
+
+  .arch-layer:first-child {
+    border-radius: 6px 6px 0 0;
+  }
+
+  .arch-layer:last-child {
+    border-radius: 0 0 6px 6px;
+  }
+
+  .arch-layer + .arch-layer {
+    border-top: none;
+  }
+
+  .arch-layer .layer-name {
+    font-weight: 600;
+    color: var(--accent);
+    font-size: 13px;
+    margin-bottom: 4px;
+  }
+
+  .arch-layer .layer-desc {
+    color: var(--text-dim);
+    font-size: 12px;
+  }
+
+  .arch-layer .layer-scope {
+    position: absolute;
+    right: 16px;
+    top: 14px;
+    font-size: 10px;
+    color: var(--text-dim);
+    background: var(--bg);
+    padding: 2px 8px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+  }
+
+  .principles-list {
+    list-style: none;
+    margin-top: 8px;
+  }
+
+  .principles-list li {
+    padding: 5px 0;
+    padding-left: 20px;
+    position: relative;
+    color: var(--text);
+    font-size: 12.5px;
+    line-height: 1.6;
+  }
+
+  .principles-list li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 12px;
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    background: var(--phase);
+    opacity: 0.6;
+  }
+
+  /* ── Files Tab ──────────────────────────────────────────────── */
+
+  .files-group {
+    margin-bottom: 28px;
+  }
+
+  .files-group h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 8px;
+    padding: 6px 12px;
+    background: linear-gradient(90deg, var(--bg-section), transparent);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 4px 4px 0;
+  }
+
+  .files-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  .files-table th {
+    text-align: left;
+    padding: 8px 12px;
+    color: var(--text-dim);
+    font-weight: 600;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-section);
+  }
+
+  .files-table td {
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--indent-guide);
+    color: var(--text);
+  }
+
+  .files-table tr:nth-child(even) td {
+    background: rgba(30, 31, 46, 0.5);
+  }
+
+  .files-table tr:hover td {
+    background: var(--bg-hover);
+  }
+
+  .files-table .file-path {
+    color: var(--func);
+    font-weight: 500;
+  }
+
+  .files-table .file-role {
+    color: var(--text);
+  }
+
+  .files-table .file-status {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    display: inline-block;
+  }
+
+  .file-status.active {
+    background: rgba(158, 206, 106, 0.15);
+    color: var(--cond);
+  }
+
+  .file-status.available {
+    background: rgba(125, 207, 255, 0.15);
+    color: var(--accent);
+  }
+
+  .file-status.current {
+    background: rgba(122, 162, 247, 0.15);
+    color: var(--phase);
+  }
+
+  .file-status.design {
+    background: rgba(224, 175, 104, 0.15);
+    color: var(--literal);
+  }
+
+  .file-status.reference {
+    background: rgba(86, 95, 137, 0.2);
+    color: var(--text-dim);
+  }
+
+  .files-table .file-lines {
+    color: var(--literal);
+    text-align: right;
+    font-weight: 500;
+  }
+
+  /* ── Tech Stack Tab ─────────────────────────────────────────── */
+
+  .tech-section {
+    margin-bottom: 28px;
+  }
+
+  .tech-section h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 10px;
+    padding: 6px 12px;
+    background: linear-gradient(90deg, var(--bg-section), transparent);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 4px 4px 0;
+  }
+
+  .tech-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .tech-list li {
+    padding: 5px 0 5px 16px;
+    position: relative;
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: var(--text);
+  }
+
+  .tech-list li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 13px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--phase);
+    opacity: 0.5;
+  }
+
+  .tech-list code {
+    background: var(--bg);
+    color: var(--func);
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+    border: 1px solid var(--indent-guide);
+  }
+
+  .coord-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin-top: 8px;
+  }
+
+  .coord-table th {
+    text-align: left;
+    padding: 8px 12px;
+    color: var(--text-dim);
+    font-weight: 600;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-section);
+  }
+
+  .coord-table td {
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--indent-guide);
+    color: var(--text);
+  }
+
+  .coord-table tr:nth-child(even) td {
+    background: rgba(30, 31, 46, 0.5);
+  }
+
+  .coord-table .frame-name {
+    color: var(--accent);
+    font-weight: 500;
+  }
+
   /* ── Responsive ─────────────────────────────────────────────── */
 
   @media (max-width: 700px) {
     header { padding: 16px 16px; }
     .legend { padding: 10px 16px; }
+    .tab-bar { padding: 0 16px; }
+    .tab-btn { padding: 10px 14px; font-size: 12px; }
     main { padding: 16px 10px 60px; }
     .section-body { padding-left: 18px; }
     .overview-flow { flex-direction: column; }
     .flow-arrow { transform: rotate(90deg); }
+    .metric-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+    .arch-layer .layer-scope { position: static; margin-top: 4px; display: inline-block; }
   }
 </style>
 </head>
@@ -395,11 +755,135 @@
     <h1>SLAM Explorer &mdash; Exploration Algorithm</h1>
     <p>Multi-robot warehouse mapping &middot; Pseudocode reference</p>
   </div>
-  <div class="controls">
+  <div class="controls" id="overview-controls" style="display:none;">
     <button onclick="expandAll()">Expand All</button>
     <button onclick="collapseAll()">Collapse All</button>
   </div>
 </header>
+
+<!-- ── Tab Bar ───────────────────────────────────────────────────── -->
+
+<div class="tab-bar">
+  <button class="tab-btn active" data-tab="tab-summary">Executive Summary</button>
+  <button class="tab-btn" data-tab="tab-overview">Overview</button>
+  <button class="tab-btn" data-tab="tab-files">Files</button>
+  <button class="tab-btn" data-tab="tab-techstack">Tech Stack</button>
+</div>
+
+<!-- ================================================================== -->
+<!-- TAB 1: EXECUTIVE SUMMARY                                           -->
+<!-- ================================================================== -->
+
+<div class="tab-content active" id="tab-summary">
+<main>
+
+<div class="summary-section">
+  <h2>SLAM Explorer &mdash; Multi-Robot Warehouse Mapping Simulation</h2>
+  <p class="summary-paragraph">
+    Multi-robot autonomous exploration system where robots use LiDAR SLAM to map unknown warehouse environments. Each robot operates independently, building a topological graph (nodes = places, edges = connections) from 360&deg; LiDAR scans. Robots share information only through a Gun.js CRDT protocol. The system runs as a Node.js server with a browser-based visualization.
+  </p>
+</div>
+
+<div class="summary-section">
+  <h2>Key Metrics</h2>
+  <div class="metric-grid">
+    <div class="metric-card">
+      <span class="metric-value">30</span>
+      <span class="metric-label">source files, ~8,500 lines of TypeScript</span>
+    </div>
+    <div class="metric-card">
+      <span class="metric-value">30</span>
+      <span class="metric-label">particle GMapping-style SLAM</span>
+    </div>
+    <div class="metric-card">
+      <span class="metric-value">0.1m</span>
+      <span class="metric-label">occupancy grid resolution</span>
+    </div>
+    <div class="metric-card">
+      <span class="metric-value">8</span>
+      <span class="metric-label">selectable behavior modes</span>
+    </div>
+    <div class="metric-card">
+      <span class="metric-value">10</span>
+      <span class="metric-label">warehouse maps included</span>
+    </div>
+    <div class="metric-card">
+      <span class="metric-value">0</span>
+      <span class="metric-label">errors on all 10 maps (zero noise)</span>
+    </div>
+  </div>
+</div>
+
+<div class="summary-section">
+  <h2>4-Phase Exploration Cycle</h2>
+  <div class="overview-flow">
+    <div class="flow-box">
+      <div class="step-num">Phase 1</div>
+      <div class="step-name">ARRIVING</div>
+      <div class="step-desc">Reach node, snap position, drift correct</div>
+    </div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-box">
+      <div class="step-num">Phase 2</div>
+      <div class="step-name">SCANNING</div>
+      <div class="step-desc">360&deg; feature detection, node/edge creation</div>
+    </div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-box">
+      <div class="step-num">Phase 3</div>
+      <div class="step-name">CHOOSING</div>
+      <div class="step-desc">Pick next edge by exploration priority</div>
+    </div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-box">
+      <div class="step-num">Phase 4</div>
+      <div class="step-name">TRAVELING</div>
+      <div class="step-desc">Drive to destination, collect corridor data</div>
+    </div>
+  </div>
+  <div class="flow-loop">Loops back to ARRIVING on reach &middot; Wall-stop and stuck recovery also restart from ARRIVING</div>
+</div>
+
+<div class="summary-section">
+  <h2>Architecture Layers</h2>
+  <div class="arch-layers">
+    <div class="arch-layer">
+      <span class="layer-scope">server only</span>
+      <div class="layer-name">World Simulation</div>
+      <div class="layer-desc">Ground truth map, Physics, LiDAR + Odometry simulation</div>
+    </div>
+    <div class="arch-layer">
+      <span class="layer-scope">per robot</span>
+      <div class="layer-name">Robot Agent</div>
+      <div class="layer-desc">SLAM Engine, Feature Detection, Network Graph, Navigation, Behavior Modes</div>
+    </div>
+    <div class="arch-layer">
+      <span class="layer-scope">cross-robot</span>
+      <div class="layer-name">Merge Protocol</div>
+      <div class="layer-desc">Candidate Detector, Umeyama Alignment</div>
+    </div>
+  </div>
+</div>
+
+<div class="summary-section">
+  <h2>Key Design Principles</h2>
+  <ul class="principles-list">
+    <li>Robots only know what their sensors tell them &mdash; no access to ground truth</li>
+    <li>Node creation is atomic with edge creation (no orphan nodes)</li>
+    <li>Blocked edges are kept, not deleted (topology may reopen)</li>
+    <li>Traveled/explored entities are never pruned</li>
+    <li>Scan matching disabled during travel (prevents tunnel drift)</li>
+  </ul>
+</div>
+
+</main>
+</div>
+
+<!-- ================================================================== -->
+<!-- TAB 2: OVERVIEW (EXISTING PSEUDOCODE CONTENT)                      -->
+<!-- ================================================================== -->
+
+<div class="tab-content" id="tab-overview">
 
 <div class="legend">
   <div class="legend-item"><div class="legend-swatch" style="background:var(--phase)"></div> Phase / Module</div>
@@ -1439,26 +1923,303 @@
 </div>
 
 </main>
+</div>
+
+<!-- ================================================================== -->
+<!-- TAB 3: FILES                                                       -->
+<!-- ================================================================== -->
+
+<div class="tab-content" id="tab-files">
+<main>
+
+<div class="files-group">
+  <h3>shared/ (7 files)</h3>
+  <table class="files-table">
+    <thead><tr><th>File</th><th>Role</th><th>Status</th><th style="text-align:right">~Lines</th></tr></thead>
+    <tbody>
+      <tr><td class="file-path">types.ts</td><td class="file-role">All type definitions, enums, default configs</td><td><span class="file-status active">Active</span></td><td class="file-lines">570</td></tr>
+      <tr><td class="file-path">protocol.ts</td><td class="file-role">Server/Robot and Server/Browser message definitions</td><td><span class="file-status active">Active</span></td><td class="file-lines">270</td></tr>
+      <tr><td class="file-path">math.ts</td><td class="file-role">Vec2 operations, angle math, pose transforms, Gaussian random</td><td><span class="file-status active">Active</span></td><td class="file-lines">160</td></tr>
+      <tr><td class="file-path">geometry.ts</td><td class="file-role">Bresenham line, ray-segment intersection, grid-based LOS</td><td><span class="file-status active">Active</span></td><td class="file-lines">215</td></tr>
+      <tr><td class="file-path">events.ts</td><td class="file-role">TypedEventEmitter class</td><td><span class="file-status active">Active</span></td><td class="file-lines">45</td></tr>
+      <tr><td class="file-path">uuid.ts</td><td class="file-role">UUID v4 and short ID generators</td><td><span class="file-status active">Active</span></td><td class="file-lines">30</td></tr>
+      <tr><td class="file-path">gun-schema.ts</td><td class="file-role">In-process CRDT network (ObservationStore + InProcessNetwork)</td><td><span class="file-status active">Active</span></td><td class="file-lines">110</td></tr>
+      <tr><td class="file-path">gun-network.ts</td><td class="file-role">Real Gun.js P2P network adapter with heartbeat/reconnect</td><td><span class="file-status available">Available</span></td><td class="file-lines">400</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="files-group">
+  <h3>world/ (5 files)</h3>
+  <table class="files-table">
+    <thead><tr><th>File</th><th>Role</th><th>Status</th><th style="text-align:right">~Lines</th></tr></thead>
+    <tbody>
+      <tr><td class="file-path">world-server.ts</td><td class="file-role">Main simulation server, HTTP + WebSocket, tick loop, visualization</td><td><span class="file-status active">Active</span></td><td class="file-lines">680</td></tr>
+      <tr><td class="file-path">ground-truth-map.ts</td><td class="file-role">Map loading, cell access, raycasting, traversability</td><td><span class="file-status active">Active</span></td><td class="file-lines">275</td></tr>
+      <tr><td class="file-path">robot-connection.ts</td><td class="file-role">Per-robot data stream, SLAM/world coordinate transform, drift tracking</td><td><span class="file-status active">Active</span></td><td class="file-lines">240</td></tr>
+      <tr><td class="file-path">physics-engine.ts</td><td class="file-role">Differential drive kinematics, collision detection, sliding</td><td><span class="file-status active">Active</span></td><td class="file-lines">130</td></tr>
+      <tr><td class="file-path">lidar-simulator.ts</td><td class="file-role">Ground-truth raycasting with noise</td><td><span class="file-status active">Active</span></td><td class="file-lines">70</td></tr>
+      <tr><td class="file-path">odometry-simulator.ts</td><td class="file-role">Movement noise with cross-contamination</td><td><span class="file-status active">Active</span></td><td class="file-lines">65</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="files-group">
+  <h3>robot/slam/ (4 files)</h3>
+  <table class="files-table">
+    <thead><tr><th>File</th><th>Role</th><th>Status</th><th style="text-align:right">~Lines</th></tr></thead>
+    <tbody>
+      <tr><td class="file-path">particle-filter.ts</td><td class="file-role">30-particle GMapping SLAM, systematic resampling, confidence</td><td><span class="file-status active">Active</span></td><td class="file-lines">340</td></tr>
+      <tr><td class="file-path">slam-engine.ts</td><td class="file-role">SLAM pipeline orchestrator, A* grid pathfinding, ray casting</td><td><span class="file-status active">Active</span></td><td class="file-lines">340</td></tr>
+      <tr><td class="file-path">occupancy-grid.ts</td><td class="file-role">Log-odds Float32Array grid, coordinate conversion, region extraction</td><td><span class="file-status active">Active</span></td><td class="file-lines">240</td></tr>
+      <tr><td class="file-path">scan-matching.ts</td><td class="file-role">Multi-resolution correlative scan matcher</td><td><span class="file-status active">Active</span></td><td class="file-lines">200</td></tr>
+      <tr><td class="file-path">inverse-sensor-model.ts</td><td class="file-role">Bresenham ray tracing per LiDAR beam, wall thickening</td><td><span class="file-status active">Active</span></td><td class="file-lines">155</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="files-group">
+  <h3>robot/network/ (3 files)</h3>
+  <table class="files-table">
+    <thead><tr><th>File</th><th>Role</th><th>Status</th><th style="text-align:right">~Lines</th></tr></thead>
+    <tbody>
+      <tr><td class="file-path">network-graph.ts</td><td class="file-role">Topological graph, BFS pathfinding, exploration edge choice, pruning</td><td><span class="file-status active">Active</span></td><td class="file-lines">580</td></tr>
+      <tr><td class="file-path">graph-publisher.ts</td><td class="file-role">Publishes nodes/edges to Gun network</td><td><span class="file-status active">Active</span></td><td class="file-lines">95</td></tr>
+      <tr><td class="file-path">graph-subscriber.ts</td><td class="file-role">Subscribes to external nodes, coordinate transform</td><td><span class="file-status active">Active</span></td><td class="file-lines">230</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="files-group">
+  <h3>robot/navigation/ (1 file)</h3>
+  <table class="files-table">
+    <thead><tr><th>File</th><th>Role</th><th>Status</th><th style="text-align:right">~Lines</th></tr></thead>
+    <tbody>
+      <tr><td class="file-path">motor-controller.ts</td><td class="file-role">Reactive wall avoidance, corridor centering, speed control</td><td><span class="file-status active">Active</span></td><td class="file-lines">195</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="files-group">
+  <h3>robot/feature-detection/ (1 file)</h3>
+  <table class="files-table">
+    <thead><tr><th>File</th><th>Role</th><th>Status</th><th style="text-align:right">~Lines</th></tr></thead>
+    <tbody>
+      <tr><td class="file-path">feature-detector.ts</td><td class="file-role">360-degree LiDAR analysis, junction/corner/dead-end/side-opening detection</td><td><span class="file-status active">Active</span></td><td class="file-lines">350</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="files-group">
+  <h3>robot/treadmill/ (2 files)</h3>
+  <table class="files-table">
+    <thead><tr><th>File</th><th>Role</th><th>Status</th><th style="text-align:right">~Lines</th></tr></thead>
+    <tbody>
+      <tr><td class="file-path">node-map-manager.ts</td><td class="file-role">Local SLAM grid snapshots at each explored node</td><td><span class="file-status active">Active</span></td><td class="file-lines">180</td></tr>
+      <tr><td class="file-path">edge-map-manager.ts</td><td class="file-role">Corridor SLAM strips along traveled edges</td><td><span class="file-status active">Active</span></td><td class="file-lines">200</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="files-group">
+  <h3>robot/merge/ (2 files)</h3>
+  <table class="files-table">
+    <thead><tr><th>File</th><th>Role</th><th>Status</th><th style="text-align:right">~Lines</th></tr></thead>
+    <tbody>
+      <tr><td class="file-path">candidate-detector.ts</td><td class="file-role">Node summary generation, geometry/feature/topology matching</td><td><span class="file-status active">Active</span></td><td class="file-lines">280</td></tr>
+      <tr><td class="file-path">alignment.ts</td><td class="file-role">Umeyama similarity transform for graph alignment</td><td><span class="file-status active">Active</span></td><td class="file-lines">265</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="files-group">
+  <h3>robot/behavior/ (1 file)</h3>
+  <table class="files-table">
+    <thead><tr><th>File</th><th>Role</th><th>Status</th><th style="text-align:right">~Lines</th></tr></thead>
+    <tbody>
+      <tr><td class="file-path">behavior-modes.ts</td><td class="file-role">8 behavior mode strategy functions</td><td><span class="file-status active">Active</span></td><td class="file-lines">240</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="files-group">
+  <h3>robot/ (1 file)</h3>
+  <table class="files-table">
+    <thead><tr><th>File</th><th>Role</th><th>Status</th><th style="text-align:right">~Lines</th></tr></thead>
+    <tbody>
+      <tr><td class="file-path">robot-agent.ts</td><td class="file-role">Main exploration loop, 4-phase cycle, node/edge creation</td><td><span class="file-status active">Active</span></td><td class="file-lines">1840</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="files-group">
+  <h3>Other project files (non-source)</h3>
+  <table class="files-table">
+    <thead><tr><th>File</th><th>Role</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td class="file-path">public/index.html</td><td class="file-role">Browser visualization UI</td><td><span class="file-status active">Active</span></td></tr>
+      <tr><td class="file-path">package.json</td><td class="file-role">Dependencies: gun, ws, typescript, jest</td><td><span class="file-status active">Active</span></td></tr>
+      <tr><td class="file-path">tsconfig.json</td><td class="file-role">TypeScript configuration</td><td><span class="file-status active">Active</span></td></tr>
+      <tr><td class="file-path">ARCHITECTURE.md</td><td class="file-role">System architecture document</td><td><span class="file-status current">Current</span></td></tr>
+      <tr><td class="file-path">CLAUDE.md</td><td class="file-role">Project instructions for AI assistants</td><td><span class="file-status current">Current</span></td></tr>
+      <tr><td class="file-path">BEHAVIOR-MODES.md</td><td class="file-role">Behavior mode design document</td><td><span class="file-status current">Current</span></td></tr>
+      <tr><td class="file-path">PATHING-IMPROVEMENTS.md</td><td class="file-role">10 pathing improvements (design)</td><td><span class="file-status design">Design</span></td></tr>
+      <tr><td class="file-path">STITCHED-MAP-DESIGN.md</td><td class="file-role">Stitched SLAM map viewer (design)</td><td><span class="file-status design">Design</span></td></tr>
+      <tr><td class="file-path">coordinate-audit.md</td><td class="file-role">Coordinate system audit (180 refs, 0 bugs)</td><td><span class="file-status reference">Reference</span></td></tr>
+      <tr><td class="file-path">audit-report.md</td><td class="file-role">Codebase audit with fix status</td><td><span class="file-status reference">Reference</span></td></tr>
+      <tr><td class="file-path">CHANGELOG.md</td><td class="file-role">Changelog</td><td><span class="file-status current">Current</span></td></tr>
+    </tbody>
+  </table>
+</div>
+
+</main>
+</div>
+
+<!-- ================================================================== -->
+<!-- TAB 4: TECH STACK                                                  -->
+<!-- ================================================================== -->
+
+<div class="tab-content" id="tab-techstack">
+<main>
+
+<div class="tech-section">
+  <h3>Runtime &amp; Language</h3>
+  <ul class="tech-list">
+    <li>TypeScript (ES2022 target, strict mode)</li>
+    <li>Node.js with CommonJS modules</li>
+    <li>Single-process simulation (no child processes)</li>
+  </ul>
+</div>
+
+<div class="tech-section">
+  <h3>Dependencies</h3>
+  <ul class="tech-list">
+    <li><code>gun</code> &mdash; CRDT-based P2P data sync protocol (used for multi-robot information sharing)</li>
+    <li><code>ws</code> &mdash; WebSocket server for browser visualization</li>
+    <li>Dev: <code>typescript</code>, <code>jest</code>, <code>ts-jest</code>, <code>@types/node</code>, <code>@types/ws</code>, <code>@types/jest</code></li>
+  </ul>
+</div>
+
+<div class="tech-section">
+  <h3>SLAM Pipeline</h3>
+  <ul class="tech-list">
+    <li>GMapping-style particle filter (30 particles)</li>
+    <li>Log-odds occupancy grid (Float32Array, 0.1m resolution, 80m grid = 640,000 cells)</li>
+    <li>Multi-resolution correlative scan matching (coarse 4x + fine 1x)</li>
+    <li>Inverse sensor model with Bresenham raycasting and 4-neighbor wall thickening</li>
+    <li>Scan matching runs only at node arrivals (not during travel)</li>
+  </ul>
+</div>
+
+<div class="tech-section">
+  <h3>Navigation</h3>
+  <ul class="tech-list">
+    <li>Reactive navigation with wall avoidance and corridor centering</li>
+    <li>BFS shortest path through topological graph</li>
+    <li>A* grid pathfinding on SLAM occupancy grid (8-directional, Manhattan heuristic)</li>
+    <li>Manual click-to-navigate via BFS hop-by-hop</li>
+  </ul>
+</div>
+
+<div class="tech-section">
+  <h3>Multi-Robot Communication</h3>
+  <ul class="tech-list">
+    <li>Gun.js CRDT protocol (observation-level set-union semantics)</li>
+    <li>InProcessNetwork for same-process simulation (no actual network IO)</li>
+    <li>GunNetwork adapter for real P2P deployment</li>
+    <li>Umeyama similarity transform for coordinate alignment between robots</li>
+  </ul>
+</div>
+
+<div class="tech-section">
+  <h3>Visualization</h3>
+  <ul class="tech-list">
+    <li>Single-page browser UI (<code>public/index.html</code>)</li>
+    <li>WebSocket real-time updates (frame messages every tick)</li>
+    <li>Canvas-based map rendering with D3.js-style topology overlay</li>
+    <li>Per-robot mode dropdowns, node/edge popups, map editing</li>
+  </ul>
+</div>
+
+<div class="tech-section">
+  <h3>Sensor Simulation</h3>
+  <ul class="tech-list">
+    <li>360-ray LiDAR (full 360&deg;, 8m range) with Gaussian noise + spurious readings</li>
+    <li>Odometry with proportional noise + cross-contamination</li>
+    <li>Differential drive physics with mid-point integration</li>
+    <li>8-point perimeter collision detection</li>
+  </ul>
+</div>
+
+<div class="tech-section">
+  <h3>Coordinate Systems (4 frames)</h3>
+  <table class="coord-table">
+    <thead><tr><th>Frame</th><th>Origin</th><th>Units</th><th>Used By</th></tr></thead>
+    <tbody>
+      <tr><td class="frame-name">World</td><td>Map top-left (0,0)</td><td>1 cell = 1m</td><td>Physics + visualization</td></tr>
+      <tr><td class="frame-name">SLAM</td><td>Robot's start position (0,0)</td><td>meters</td><td>Robot agent + graph</td></tr>
+      <tr><td class="frame-name">SLAM Grid</td><td>Grid origin</td><td>0.1m cells</td><td>Occupancy grid</td></tr>
+      <tr><td class="frame-name">LiDAR</td><td>Robot-relative</td><td>angles relative to heading</td><td>Sensor data</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="tech-section">
+  <h3>Key Algorithms</h3>
+  <ul class="tech-list">
+    <li>Bresenham line-of-sight (grid and geometry)</li>
+    <li>Low-variance systematic resampling (particle filter)</li>
+    <li>DDA raycasting (ground truth LiDAR simulation)</li>
+    <li>Umeyama similarity transform (multi-robot alignment)</li>
+    <li>Feature detection via range-peak splitting and side-opening detection</li>
+  </ul>
+</div>
+
+</main>
+</div>
 
 <script>
+// ── Tab Switching ────────────────────────────────────────────────────
+
+document.querySelectorAll('.tab-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    // Deactivate all tabs and content
+    document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+    document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.remove('active'); });
+
+    // Activate clicked tab and its content
+    btn.classList.add('active');
+    var targetId = btn.getAttribute('data-tab');
+    document.getElementById(targetId).classList.add('active');
+
+    // Show/hide Expand All / Collapse All buttons (only on Overview tab)
+    var controls = document.getElementById('overview-controls');
+    if (targetId === 'tab-overview') {
+      controls.style.display = 'flex';
+    } else {
+      controls.style.display = 'none';
+    }
+  });
+});
+
 // ── Toggle ────────────────────────────────────────────────────────────
 
 function toggle(header) {
-  const section = header.parentElement;
-  const wasOpen = section.classList.contains('open');
+  var section = header.parentElement;
+  var wasOpen = section.classList.contains('open');
   section.classList.toggle('open');
   header.querySelector('.toggle').textContent = wasOpen ? '+' : '−';
 }
 
 function expandAll() {
-  document.querySelectorAll('.section').forEach(s => {
+  document.querySelectorAll('#tab-overview .section').forEach(function(s) {
     s.classList.add('open');
     s.querySelector('.toggle').textContent = '−';
   });
 }
 
 function collapseAll() {
-  document.querySelectorAll('.section').forEach(s => {
+  document.querySelectorAll('#tab-overview .section').forEach(function(s) {
     s.classList.remove('open');
     s.querySelector('.toggle').textContent = '+';
   });
@@ -1466,16 +2227,26 @@ function collapseAll() {
 
 // ── Clickable function references ─────────────────────────────────────
 
-document.addEventListener('click', (e) => {
-  const ref = e.target.closest('.fn-ref');
+document.addEventListener('click', function(e) {
+  var ref = e.target.closest('.fn-ref');
   if (!ref) return;
   e.stopPropagation(); // Don't trigger section toggle
 
-  const targetId = ref.dataset.target;
+  var targetId = ref.dataset.target;
   if (!targetId) return;
 
-  const targetSection = document.getElementById(targetId);
+  var targetSection = document.getElementById(targetId);
   if (!targetSection) return;
+
+  // Switch to Overview tab if not already there
+  var overviewTab = document.getElementById('tab-overview');
+  if (!overviewTab.classList.contains('active')) {
+    document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+    document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.remove('active'); });
+    overviewTab.classList.add('active');
+    document.querySelector('[data-tab="tab-overview"]').classList.add('active');
+    document.getElementById('overview-controls').style.display = 'flex';
+  }
 
   // Open the target section if closed
   if (!targetSection.classList.contains('open')) {
@@ -1488,7 +2259,7 @@ document.addEventListener('click', (e) => {
 
   // Brief highlight
   targetSection.querySelector('.section-header').style.background = 'rgba(122, 162, 247, 0.15)';
-  setTimeout(() => {
+  setTimeout(function() {
     targetSection.querySelector('.section-header').style.background = '';
   }, 1500);
 });

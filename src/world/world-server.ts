@@ -61,11 +61,29 @@ export class WorldServer {
 
   private mapsDir: string;
   private currentMapFile: string;
+  private authPassword: string;
 
   constructor(config: SimulationConfig = DEFAULT_SIMULATION_CONFIG) {
     this.config = config;
     this.mapsDir = path.resolve(__dirname, "../../warehouse-maps");
     this.currentMapFile = "map-05-two-robots.txt";
+    this.authPassword = process.env.SLAM_PASSWORD || "4hadway";
+  }
+
+  private checkBasicAuth(req: http.IncomingMessage): boolean {
+    const header = req.headers.authorization;
+    if (!header || !header.startsWith("Basic ")) return false;
+    const decoded = Buffer.from(header.slice(6), "base64").toString("utf-8");
+    const password = decoded.includes(":") ? decoded.split(":").slice(1).join(":") : decoded;
+    return password === this.authPassword;
+  }
+
+  private sendAuthChallenge(res: http.ServerResponse): void {
+    res.writeHead(401, {
+      "WWW-Authenticate": 'Basic realm="SLAM Explorer"',
+      "Content-Type": "text/plain",
+    });
+    res.end("Unauthorized");
   }
 
   /**
@@ -127,7 +145,23 @@ export class WorldServer {
    */
   startServer(port: number = 3000): void {
     this.httpServer = http.createServer((req, res) => this.handleHttp(req, res));
-    this.wss = new WebSocketServer({ server: this.httpServer });
+    this.wss = new WebSocketServer({
+      server: this.httpServer,
+      verifyClient: (info, cb) => {
+        if (!this.checkBasicAuth(info.req)) {
+          cb(false, 401, "Unauthorized");
+          return;
+        }
+        const origin = info.origin || info.req.headers.origin;
+        const host = info.req.headers.host;
+        if (origin && host && !origin.includes(host)) {
+          cb(false, 403, "Forbidden");
+          return;
+        }
+        cb(true);
+      },
+      maxPayload: 64 * 1024,
+    });
 
     this.wss.on("connection", (ws) => {
       this.clients.add(ws);
@@ -138,7 +172,7 @@ export class WorldServer {
       this.sendInit(ws);
     });
 
-    this.httpServer.listen(port, () => {
+    this.httpServer.listen(port, "0.0.0.0", () => {
       console.log(`World Server running at http://localhost:${port}`);
       console.log(`Map: ${this.currentMapFile} | Robots: ${this.robots.length}`);
     });
@@ -426,28 +460,40 @@ export class WorldServer {
   // -------------------------------------------------------------------------
 
   private handleHttp(req: http.IncomingMessage, res: http.ServerResponse): void {
+    if (!this.checkBasicAuth(req)) {
+      this.sendAuthChallenge(res);
+      return;
+    }
+
     const url = req.url ?? "/";
+
+    const securityHeaders: Record<string, string> = {
+      "X-Content-Type-Options": "nosniff",
+      "X-Frame-Options": "DENY",
+      "Referrer-Policy": "strict-origin-when-cross-origin",
+      "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' ws: wss:",
+    };
 
     if (url === "/maps") {
       const maps = listMaps(this.mapsDir);
-      res.writeHead(200, { "Content-Type": "application/json" });
+      res.writeHead(200, { "Content-Type": "application/json", ...securityHeaders });
       res.end(JSON.stringify({ maps, current: this.currentMapFile }));
       return;
     }
 
     // Serve static files from public/
+    const publicDir = path.resolve(__dirname, "../../public");
     let filePath: string;
     if (url === "/" || url === "/index.html") {
-      filePath = path.resolve(__dirname, "../../public/index.html");
+      filePath = path.resolve(publicDir, "index.html");
     } else {
-      // Security: prevent path traversal
-      const safePath = url.replace(/\.\./g, "").replace(/^\/+/, "");
-      filePath = path.resolve(__dirname, "../../public", safePath);
+      const safePath = decodeURIComponent(url).replace(/\.\./g, "").replace(/^\/+/, "");
+      filePath = path.resolve(publicDir, safePath);
     }
 
-    if (!fs.existsSync(filePath)) {
-      res.writeHead(404);
-      res.end("Not found");
+    if (!filePath.startsWith(publicDir + path.sep) && filePath !== publicDir) {
+      res.writeHead(403, securityHeaders);
+      res.end("Forbidden");
       return;
     }
 
@@ -458,10 +504,18 @@ export class WorldServer {
       ".css": "text/css",
       ".json": "application/json",
       ".png": "image/png",
+      ".bmp": "image/bmp",
     };
 
-    res.writeHead(200, { "Content-Type": mimeTypes[ext] ?? "text/plain" });
-    res.end(fs.readFileSync(filePath));
+    fs.readFile(filePath, (err, data) => {
+      if (err) {
+        res.writeHead(404, securityHeaders);
+        res.end("Not found");
+        return;
+      }
+      res.writeHead(200, { "Content-Type": mimeTypes[ext] ?? "text/plain", ...securityHeaders });
+      res.end(data);
+    });
   }
 
   // -------------------------------------------------------------------------
@@ -476,6 +530,7 @@ export class WorldServer {
       return;
     }
 
+    try {
     switch (msg.type) {
       case "play":
         this.paused = false;
@@ -505,7 +560,12 @@ export class WorldServer {
           clearTimeout(this.tickTimer);
           this.tickTimer = null;
         }
-        const mapFile = (msg as any).map ?? this.currentMapFile;
+        const rawMapFile = (msg as any).map ?? this.currentMapFile;
+        const mapFile = path.basename(rawMapFile);
+        const resolvedMap = path.resolve(this.mapsDir, mapFile);
+        if (!resolvedMap.startsWith(this.mapsDir + path.sep) && resolvedMap !== this.mapsDir) {
+          break;
+        }
         this.initialize(mapFile);
         // Broadcast new init to all clients
         for (const client of this.clients) {
@@ -592,6 +652,9 @@ export class WorldServer {
         this.singleStep();
         break;
     }
+    } catch (err) {
+      console.error("Error handling WebSocket message:", err);
+    }
   }
 
   private sendNodeInfo(ws: WebSocket, nodeId: string): void {
@@ -675,7 +738,8 @@ export class WorldServer {
 // ---------------------------------------------------------------------------
 
 if (require.main === module) {
+  const port = parseInt(process.env.PORT || "3000", 10);
   const server = new WorldServer();
   server.initialize();
-  server.startServer(3000);
+  server.startServer(port);
 }
