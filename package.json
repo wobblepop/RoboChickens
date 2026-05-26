@@ -1,0 +1,24 @@
+{
+  "name": "slam-explorer",
+  "version": "1.0.0",
+  "description": "Multi-robot SLAM-based warehouse mapping system",
+  "main": "dist/world/world-server.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/world/world-server.js",
+    "dev": "tsc --watch",
+    "test": "jest"
+  },
+  "dependencies": {
+    "gun": "^0.2020.1240",
+    "ws": "^8.16.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/ws": "^8.5.10",
+    "typescript": "^5.3.3",
+    "jest": "^29.7.0",
+    "@types/jest": "^29.5.11",
+    "ts-jest": "^29.1.1"
+  }
+}

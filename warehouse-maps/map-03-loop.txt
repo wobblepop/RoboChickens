@@ -1,0 +1,20 @@
+# Name: Simple Loop
+# Size: 21x13
+# Robots: 1 (R)
+# Difficulty: 2 - Easy
+# Tests: Loop closure detection, bidirectional path choice
+# Description: Rectangular corridor loop. Both directions lead back to start.
+#
+#####################
+#...................#
+#...................#
+#..###############..#
+#..###############..#
+#..###############..#
+#..###############..#
+#..###############..#
+#..###############..#
+#..###############..#
+#...................#
+#R..................#
+#####################

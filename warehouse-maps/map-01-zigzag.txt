@@ -1,0 +1,16 @@
+# Name: Zigzag Corridor
+# Size: 25x9
+# Robots: 1 (R)
+# Difficulty: 1 - Trivial
+# Tests: Linear exploration, turning, complete single-path coverage
+# Description: Snake-shaped single path. No branches or decisions. Baseline test.
+#
+#########################
+#R.....................##
+######################.##
+##.....................##
+##.######################
+##.....................##
+######################.##
+##.....................##
+#########################

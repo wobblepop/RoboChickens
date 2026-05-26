@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SLAM Explorer — Live Simulation</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#1e1e2a;--bg2:#282838;--border:#3a3a4a;--text:#d0d0d8;--text-dim:#a09898;
+  --gold:#e8c170;--gold2:#c9a84c;--link:#7ab8e0;
+  --r1:#7ab8e0;--r2:#e8c170;--r3:#5ec4b6;--r4:#b89ef0;
+  --tier-dead:#444441;--tier-candidate:#854F0B;--tier-provisional:#c9a84c;
+  --tier-committed:#5ec4b6;--tier-anchored:#e8c170;
+  --wall:#2c2c2a;--floor-explored:#3a3a4a;--floor-unexplored:#1e1e2a;
+  --obstacle:#854F0B;--pillar:#5F5E5A;--doorway:#c9a84c;--rough:#3B6D11;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,sans-serif;font-size:14px}
+#app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+header{display:flex;align-items:center;gap:16px;padding:8px 16px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0}
+header h1{font-size:16px;font-weight:500;color:var(--gold);white-space:nowrap}
+.controls{display:flex;align-items:center;gap:8px;margin-left:auto}
+.controls select,.controls button,.controls input{background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:4px 8px;font-size:13px;cursor:pointer}
+.controls button:hover{border-color:var(--gold2)}
+.controls button.active{background:var(--gold2);color:var(--bg);border-color:var(--gold)}
+.controls label{font-size:12px;color:var(--text-dim)}
+.controls input[type=range]{width:80px;accent-color:var(--gold2)}
+.speed-val{font-size:12px;color:var(--gold);min-width:32px;text-align:center}
+.main{display:flex;flex:1;overflow:hidden}
+.panel{flex:1;display:flex;flex-direction:column;border-right:1px solid var(--border);min-width:0;position:relative}
+.panel:last-child{border-right:none}
+.panel-header{padding:6px 12px;font-size:12px;font-weight:500;color:var(--gold2);border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:0.5px;flex-shrink:0}
+.panel canvas{display:block;margin:auto}
+#map-canvas{cursor:crosshair}
+.bottom{border-top:1px solid var(--border);flex-shrink:0}
+.metrics{display:flex;gap:0;border-bottom:1px solid var(--border)}
+.metric{flex:1;padding:8px 12px;border-right:1px solid var(--border);text-align:center}
+.metric:last-child{border-right:none}
+.metric .label{font-size:11px;color:var(--text-dim);margin-bottom:2px}
+.metric .value{font-size:16px;font-weight:500;color:var(--gold)}
+.coverage-bar{height:4px;background:var(--border);border-radius:2px;margin-top:4px}
+.coverage-fill{height:100%;background:var(--tier-committed);border-radius:2px;transition:width 0.3s}
+.robots-bar{display:flex;gap:0}
+.robot-status{flex:1;padding:6px 12px;border-right:1px solid var(--border);font-size:12px;display:flex;align-items:center;gap:8px}
+.robot-status:last-child{border-right:none}
+.robot-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.robot-name{font-weight:500}
+.robot-info{color:var(--text-dim)}
+.status-badge{display:inline-block;padding:1px 6px;border-radius:3px;font-size:11px;background:var(--border);color:var(--text)}
+.status-badge.exploring{background:#0F6E56;color:#E1F5EE}
+.status-badge.idle{background:var(--border);color:var(--text-dim)}
+.status-badge.complete{background:var(--gold2);color:var(--bg)}
+#connection-status{font-size:11px;padding:2px 6px;border-radius:3px}
+#connection-status.connected{background:#0F6E56;color:#E1F5EE}
+#connection-status.disconnected{background:#A32D2D;color:#FCEBEB}
+
+/* Legend panel */
+.legend-panel{position:absolute;bottom:8px;left:8px;background:rgba(30,30,42,0.92);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--text-dim);max-width:200px;pointer-events:auto;z-index:10}
+.legend-panel h3{font-size:11px;color:var(--gold2);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px}
+.legend-toggle{display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;padding:2px 0}
+.legend-toggle-btn{background:none;border:none;color:var(--gold2);cursor:pointer;font-size:10px;padding:0 2px}
+.legend-body{display:none}
+.legend-body.open{display:block}
+.legend-row{display:flex;align-items:center;gap:6px;margin:2px 0}
+.legend-swatch{width:14px;height:10px;border-radius:2px;flex-shrink:0;border:1px solid rgba(255,255,255,0.1)}
+.legend-line{width:14px;height:0;border-top:2px solid;flex-shrink:0}
+.legend-section{margin-top:6px}
+
+/* Robot target selector */
+.target-controls{display:flex;align-items:center;gap:6px}
+.target-controls select{background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:3px 6px;font-size:12px}
+.target-controls .target-label{font-size:11px;color:var(--text-dim)}
+
+/* Node info popup */
+.node-info-popup{position:absolute;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:12px;font-size:12px;color:var(--text);max-width:400px;max-height:500px;overflow:hidden;display:flex;flex-direction:column;z-index:20;box-shadow:0 4px 16px rgba(0,0,0,0.4)}
+.node-info-map{flex-shrink:0}
+.node-info-details{overflow-y:auto;flex:1;min-height:0}
+.node-info-popup h3{font-size:13px;color:var(--gold);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+.node-info-popup .close-btn{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:16px;padding:0 4px}
+.node-info-popup .close-btn:hover{color:var(--text)}
+.node-info-row{display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid var(--border)}
+.node-info-row .info-label{color:var(--text-dim)}
+.node-info-row .info-value{color:var(--text);text-align:right;max-width:200px;word-break:break-all}
+.node-info-section{margin-top:6px;font-size:11px;color:var(--gold2);text-transform:uppercase;letter-spacing:0.5px}
+.edge-list{margin-top:4px;font-size:11px}
+.edge-list-item{padding:2px 0;border-bottom:1px solid rgba(58,58,74,0.5);color:var(--text-dim)}
+
+/* Goal marker */
+.goal-marker-label{font-size:10px;font-weight:500}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>SLAM Explorer</h1>
+    <span id="connection-status" class="disconnected">disconnected</span>
+    <div class="controls">
+      <select id="map-select"><option>loading...</option></select>
+      <button id="btn-play" title="Play">&#9654;</button>
+      <button id="btn-pause" title="Pause">&#10074;&#10074;</button>
+      <button id="btn-step" title="Step">&#9654;|</button>
+      <button id="btn-reset" title="Reset">&#8635;</button>
+      <button id="btn-validate" title="Run mapper validation (confidence + consistency)">Validate</button>
+      <span class="target-controls">
+        <span class="target-label">Target:</span>
+        <select id="target-robot"><option value="" style="color:#4fc3f7">Nearest</option></select>
+      </span>
+      <span class="edit-controls" style="display:flex;align-items:center;gap:4px;margin-left:8px;border-left:1px solid var(--border);padding-left:8px">
+        <span style="font-size:11px;color:var(--text-dim)">Edit:</span>
+        <button id="edit-wall" title="Place wall" style="font-size:12px;padding:2px 6px;background:#555;color:#fff;border:1px solid #777;border-radius:3px;cursor:pointer">&#9632; Wall</button>
+        <button id="edit-obstacle" title="Place obstacle/box" style="font-size:12px;padding:2px 6px;background:#8B4513;color:#fff;border:1px solid #a0522d;border-radius:3px;cursor:pointer">&#9632; Box</button>
+        <button id="edit-erase" title="Remove wall/obstacle (make floor)" style="font-size:12px;padding:2px 6px;background:#2a5a2a;color:#fff;border:1px solid #3a7a3a;border-radius:3px;cursor:pointer">&#9003; Erase</button>
+        <button id="edit-off" title="Exit edit mode" style="font-size:12px;padding:2px 6px;background:var(--bg);color:var(--text-dim);border:1px solid var(--border);border-radius:3px;cursor:pointer">&#10005;</button>
+      </span>
+      <label style="margin-left:8px;display:flex;align-items:center;gap:3px;font-size:11px;cursor:pointer;color:var(--text-dim)">
+        <input type="checkbox" id="overlay-toggle"> Topology
+      </label>
+      <label>Speed</label>
+      <input type="range" id="speed-slider" min="1" max="50" value="10">
+      <span class="speed-val" id="speed-val">10</span>
+    </div>
+  </header>
+  <div class="main">
+    <div class="panel" id="map-panel">
+      <div class="panel-header">Warehouse map</div>
+      <canvas id="map-canvas"></canvas>
+    </div>
+    <div class="panel" id="graph-panel">
+      <div class="panel-header">Topology graph</div>
+      <canvas id="graph-canvas"></canvas>
+    </div>
+  </div>
+  <div class="bottom">
+    <div class="metrics">
+      <div class="metric"><div class="label">Coverage</div><div class="value" id="m-coverage">0%</div><div class="coverage-bar"><div class="coverage-fill" id="m-coverage-bar" style="width:0%"></div></div></div>
+      <div class="metric"><div class="label">Nodes</div><div class="value" id="m-nodes">0</div></div>
+      <div class="metric"><div class="label">Edges</div><div class="value" id="m-edges">0</div></div>
+      <div class="metric"><div class="label">Tick</div><div class="value" id="m-tick">0</div></div>
+      <div class="metric"><div class="label">Explored cells</div><div class="value" id="m-explored">0 / 0</div></div>
+    </div>
+    <div class="robots-bar" id="robots-bar"></div>
+  </div>
+</div>
+<script>
+(function(){
+  const ROBOT_COLORS = ['#ff5252','#69f0ae','#ffd740','#40c4ff','#ea80fc','#ff6e40'];
+  const TIER_COLORS = {dead:'#444441',candidate:'#854F0B',provisional:'#c9a84c',committed:'#5ec4b6',anchored:'#e8c170'};
+  const CELL_COLORS = {'#':'#2c2c2a','.':'#3a3a4a','D':'#c9a84c','O':'#854F0B','P':'#5F5E5A','~':'#3B6D11'};
+  const UNEXPLORED = '#1e1e2a';
+
+  const mapCanvas = document.getElementById('map-canvas');
+  const graphCanvas = document.getElementById('graph-canvas');
+  const mapCtx = mapCanvas.getContext('2d');
+  const graphCtx = graphCanvas.getContext('2d');
+
+  let ws = null;
+  let state = {grid:null,width:0,height:0,explored:new Set(),robots:[],graph:{nodes:[],edges:[]},metrics:{},complete:false};
+  let cellSize = 1;
+  let offscreenGrid = null;
+
+  // Goal markers: { robotId: string, x: number, y: number }[]
+  let goalMarkers = [];
+
+  // Flapping chicken sprite for topology robot markers
+  const CHICK_PAL = {
+    black:'#181818', white:'#f8f8f8', cream:'#f0e0b0',
+    gray:'#c8c8c8', orange:'#e86820', red:'#d82020'
+  };
+  const CHICK_BODY = [
+    {color:CHICK_PAL.white,rects:[[4,5,5,1],[3,6,7,1],[3,7,7,1],[4,8,5,1],[5,9,3,1]]},
+    {color:CHICK_PAL.cream,rects:[[5,7,3,1],[4,8,4,1],[5,9,3,1]]},
+    {color:CHICK_PAL.white,rects:[[10,3,2,1],[9,4,4,1],[9,5,4,1],[9,6,3,1]]},
+    {color:CHICK_PAL.red,rects:[[10,2,2,1],[11,1,1,1]]},
+    {color:CHICK_PAL.orange,rects:[[13,4,2,1],[13,5,1,1]]},
+    {color:CHICK_PAL.red,rects:[[12,6,1,1],[13,6,1,1]]},
+    {color:CHICK_PAL.black,rects:[[12,4,1,1]]},
+    {color:CHICK_PAL.white,rects:[[2,4,2,1],[1,3,2,1],[1,2,1,1]]}
+  ];
+  const CHICK_WINGS = [
+    [{color:CHICK_PAL.gray,rects:[[6,0,2,1],[5,1,4,1],[5,2,4,1],[6,3,3,1],[6,4,3,1]]}],
+    [{color:CHICK_PAL.gray,rects:[[0,5,4,1],[0,6,3,1],[0,7,3,1]]}],
+    [{color:CHICK_PAL.gray,rects:[[4,10,4,1],[3,11,4,1],[4,12,3,1]]}]
+  ];
+  const CHICK_SCALE = 2;
+  const CHICK_W = 16 * CHICK_SCALE;
+  const CHICK_H = 14 * CHICK_SCALE;
+
+  function renderChickenFrame(parts) {
+    const c = document.createElement('canvas');
+    c.width = CHICK_W; c.height = CHICK_H;
+    const cx = c.getContext('2d');
+    for (const p of parts) { cx.fillStyle = CHICK_PAL.black; for (const r of p.rects) cx.fillRect((r[0]-1)*CHICK_SCALE, (r[1]-1)*CHICK_SCALE, (r[2]+2)*CHICK_SCALE, (r[3]+2)*CHICK_SCALE); }
+    for (const p of parts) { cx.fillStyle = p.color; for (const r of p.rects) cx.fillRect(r[0]*CHICK_SCALE, r[1]*CHICK_SCALE, r[2]*CHICK_SCALE, r[3]*CHICK_SCALE); }
+    return c;
+  }
+  const chickenFrames = CHICK_WINGS.map(w => renderChickenFrame([...CHICK_BODY, ...w]));
+  let chickenAnimTick = 0;
+  setInterval(() => { chickenAnimTick = (chickenAnimTick + 1) % 3; }, 150);
+
+  // Graph coordinate transform (shared between render and click handler)
+  let graphTransform = null; // { minX, minY, scale, ox, oy }
+
+  // Node info popup element
+  let nodeInfoPopup = null;
+
+  function connect(){
+    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    ws = new WebSocket(proto+'://'+location.host);
+    ws.onopen = () => {
+      document.getElementById('connection-status').className = 'connected';
+      document.getElementById('connection-status').textContent = 'connected';
+    };
+    ws.onclose = () => {
+      document.getElementById('connection-status').className = 'disconnected';
+      document.getElementById('connection-status').textContent = 'disconnected';
+      setTimeout(connect, 2000);
+    };
+    ws.onerror = () => {};
+    ws.onmessage = (e) => {
+      let msg;
+      try { msg = JSON.parse(e.data); } catch { return; }
+      if (msg.type === 'init') handleInit(msg.data);
+      else if (msg.type === 'frame' || msg.type === 'complete') handleFrame(msg.data);
+      else if (msg.type === 'nodeInfo') handleNodeInfo(msg.data);
+      else if (msg.type === 'edgeInfo') handleEdgeInfo(msg.data);
+      else if (msg.type === 'robotInfo') showRobotInfoPopup(msg);
+      else if (msg.type === 'cellEdited') {
+        if (state.grid && state.grid[msg.y]) {
+          const c = msg.cellType;
+          state.grid[msg.y][msg.x] = c === 'wall' ? '#' : c === 'obstacle' ? 'O' : c === 'pillar' ? 'P' : '.';
+          renderMapFrame();
+        }
+      }
+    };
+  }
+
+  function handleInit(data){
+    state.grid = data.grid;
+    state.width = data.width;
+    state.height = data.height;
+    state.explored = new Set();
+    state.robots = data.robots || [];
+    state.graph = {nodes:[],edges:[]};
+    state.metrics = {};
+    state.complete = false;
+    goalMarkers = [];
+
+    resizeCanvases();
+    renderStaticGrid();
+    renderMapFrame();
+    renderGraphFrame();
+    updateMetrics();
+    buildRobotStatusBar(data.robots || []);
+    buildTargetRobotSelect(data.robots || []);
+    buildLegends();
+
+    fetch('/maps').then(r=>r.json()).then(d=>{
+      const sel = document.getElementById('map-select');
+      sel.innerHTML = '';
+      for(const m of d.maps){
+        const opt = document.createElement('option');
+        opt.value = m;
+        opt.textContent = m.replace(/^map-/,'').replace(/\.txt$/,'');
+        if(m === d.current) opt.selected = true;
+        sel.appendChild(opt);
+      }
+    }).catch(()=>{});
+  }
+
+  function handleFrame(data){
+    if(data.exploredCells){
+      for(const c of data.exploredCells) state.explored.add(c);
+    }
+    if(data.newlyExploredCells){
+      for(const c of data.newlyExploredCells) state.explored.add(c);
+    }
+    state.robots = data.robots || state.robots;
+    state.graph = data.graph || state.graph;
+    state.metrics = data.metrics || state.metrics;
+    state.complete = data.complete || false;
+
+    renderMapFrame();
+    renderGraphFrame();
+    updateMetrics();
+    updateRobotStatusBar();
+  }
+
+  // ---- Feature 3: Node Info Popup ----
+
+  function handleNodeInfo(data){
+    if(!data) return;
+    showNodeInfoPopup(data);
+  }
+
+  function showNodeInfoPopup(info){
+    dismissNodeInfoPopup();
+
+    const popup = document.createElement('div');
+    popup.className = 'node-info-popup';
+
+    // Position near the node on the graph canvas
+    let popupX = 60, popupY = 60;
+    if(graphTransform && info.x != null && info.y != null){
+      const gp = document.getElementById('graph-panel');
+      const rect = graphCanvas.getBoundingClientRect();
+      const gpRect = gp.getBoundingClientRect();
+      const sx = graphTransform.ox + (info.x - graphTransform.minX) * graphTransform.scale;
+      const sy = graphTransform.oy + (info.y - graphTransform.minY) * graphTransform.scale;
+      popupX = Math.min(Math.max(sx + 16, 8), rect.width - 200);
+      popupY = Math.min(Math.max(sy - 40, 8), rect.height - 200);
+    }
+    popup.style.left = popupX + 'px';
+    popup.style.top = popupY + 'px';
+
+    function row(label, value){
+      return '<div class="node-info-row"><span class="info-label">'+label+'</span><span class="info-value">'+value+'</span></div>';
+    }
+
+    let html = '<h3>Node Details <button class="close-btn" id="close-node-info">&times;</button></h3>';
+
+    // Local map at the top (fixed, not scrollable)
+    if (info.localMap && info.localMap.length > 0) {
+      html += '<div class="node-info-map"><canvas id="local-map-canvas" width="200" height="200" style="border:1px solid var(--border);border-radius:4px;margin-bottom:6px;background:#111"></canvas></div>';
+    } else {
+      html += '<div class="node-info-map" style="padding:8px 0;color:var(--text-dim);font-size:11px;text-align:center;border-bottom:1px solid var(--border);margin-bottom:6px">No map data (not yet explored)</div>';
+    }
+
+    // Scrollable details section
+    html += '<div class="node-info-details">';
+    html += row('ID', info.id || '?');
+    html += row('Type', info.type || '?');
+    html += row('Position', '('+Number(info.x).toFixed(1)+', '+Number(info.y).toFixed(1)+')');
+    html += row('Confidence', info.confidence != null ? Number(info.confidence).toFixed(3) : '?');
+    html += row('Tier', info.tier || '?');
+    html += row('Observations', info.observationCount ?? '?');
+    html += row('Explored', info.explored ? 'yes (' + (info.exploredBy || []).join(', ') + ')' : 'no');
+    html += row('Stability', info.stabilityClass || '?');
+    html += row('Created', info.createdAt ? new Date(info.createdAt).toLocaleString() : '?');
+    html += row('Last observed', info.lastObserved ? new Date(info.lastObserved).toLocaleString() : '?');
+    html += row('Is frontier', info.isFrontier ? 'yes' : 'no');
+    html += row('Edge count', info.edgeCount ?? '?');
+
+    if(info.edges && info.edges.length > 0){
+      html += '<div class="node-info-section">Connected Edges ('+info.edges.length+')</div>';
+      html += '<div class="edge-list">';
+      for(const edge of info.edges){
+        const targetId = edge.targetNodeId || edge.sourceNodeId || '?';
+        const dir = edge.targetNodeId ? 'to' : 'from';
+        html += '<div class="edge-list-item">'
+          + dir + ' ' + targetId.substring(0,8) + '...'
+          + ' | dist: ' + (edge.distance != null ? Number(edge.distance).toFixed(1) : '?')
+          + ' | tier: ' + (edge.tier || '?')
+          + (edge.traveled ? ' | traveled' : ' | untraveled')
+          + '</div>';
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+
+    popup.innerHTML = html;
+    document.getElementById('graph-panel').appendChild(popup);
+
+    // Render local map canvas
+    if (info.localMap && info.localMap.length > 0) {
+      const lmc = document.getElementById('local-map-canvas');
+      if (lmc) {
+        const ctx = lmc.getContext('2d');
+        const cells = info.localMap;
+        let lmMinX = Infinity, lmMaxX = -Infinity, lmMinY = Infinity, lmMaxY = -Infinity;
+        for (const c of cells) {
+          if (c.x < lmMinX) lmMinX = c.x;
+          if (c.x > lmMaxX) lmMaxX = c.x;
+          if (c.y < lmMinY) lmMinY = c.y;
+          if (c.y > lmMaxY) lmMaxY = c.y;
+        }
+        const lmW = lmMaxX - lmMinX + 1;
+        const lmH = lmMaxY - lmMinY + 1;
+        const cs = Math.min(Math.floor(200 / lmW), Math.floor(200 / lmH), 8);
+        lmc.width = lmW * cs;
+        lmc.height = lmH * cs;
+        for (const c of cells) {
+          const rx = (c.x - lmMinX) * cs;
+          const ry = (c.y - lmMinY) * cs;
+          ctx.fillStyle = c.state === 'wall' ? '#555' : c.state === 'obstacle' ? '#854F0B' : '#3a5a4a';
+          ctx.globalAlpha = c.confidence;
+          ctx.fillRect(rx, ry, cs, cs);
+        }
+        ctx.globalAlpha = 1;
+        // Mark the node position
+        const nrx = (Math.round(info.x) - lmMinX) * cs + cs/2;
+        const nry = (Math.round(info.y) - lmMinY) * cs + cs/2;
+        ctx.fillStyle = '#4fc3f7';
+        ctx.beginPath();
+        ctx.arc(nrx, nry, Math.max(cs*0.6, 3), 0, Math.PI*2);
+        ctx.fill();
+      }
+    }
+    nodeInfoPopup = popup;
+
+    document.getElementById('close-node-info').onclick = dismissNodeInfoPopup;
+  }
+
+  function dismissNodeInfoPopup(){
+    if(nodeInfoPopup){
+      nodeInfoPopup.remove();
+      nodeInfoPopup = null;
+    }
+  }
+
+  function showRobotInfoPopup(info) {
+    dismissNodeInfoPopup();
+
+    const popup = document.createElement('div');
+    popup.className = 'node-info-popup';
+
+    let popupX = 60, popupY = 60;
+    if (graphTransform && info.worldPose) {
+      const sx = graphTransform.ox + (info.worldPose.x - graphTransform.minX) * graphTransform.scale;
+      const sy = graphTransform.oy + (info.worldPose.y - graphTransform.minY) * graphTransform.scale;
+      const rect = graphCanvas.getBoundingClientRect();
+      popupX = Math.min(Math.max(sx + 16, 8), rect.width - 220);
+      popupY = Math.min(Math.max(sy - 40, 8), rect.height - 200);
+    }
+    popup.style.left = popupX + 'px';
+    popup.style.top = popupY + 'px';
+
+    function row(label, value) {
+      return '<div class="node-info-row"><span class="info-label">' + label + '</span><span class="info-value">' + value + '</span></div>';
+    }
+
+    function fmtPos(p) {
+      if (!p) return '?';
+      return '(' + Number(p.x).toFixed(2) + ', ' + Number(p.y).toFixed(2) + ')';
+    }
+
+    function fmtAngle(p) {
+      if (!p || p.theta == null) return '';
+      return ' @ ' + (Number(p.theta) * 180 / Math.PI).toFixed(1) + '°';
+    }
+
+    let html = '<h3>Robot ' + (info.robotId || '?') + ' <button class="close-btn" id="close-node-info">&times;</button></h3>';
+    html += '<div class="node-info-details">';
+    html += row('Status', info.status || '?');
+    html += row('Actual pos', fmtPos(info.worldPose) + fmtAngle(info.worldPose));
+    html += row('Believed pos', fmtPos(info.believedPose) + fmtAngle(info.believedPose));
+    html += row('SLAM pos', fmtPos(info.slamPose) + fmtAngle(info.slamPose));
+    html += row('Position error', (info.positionError != null ? info.positionError.toFixed(3) : '?') + ' m');
+    html += row('Cumul. drift', (info.cumulativeDrift != null ? info.cumulativeDrift.toFixed(3) : '?') + ' m');
+    html += row('Target pos', fmtPos(info.targetPosition));
+    html += row('Target node', info.targetNodeId ? info.targetNodeId.substring(0, 12) + '...' : 'none');
+    html += row('Current node', info.currentNodeId ? info.currentNodeId.substring(0, 12) + '...' : 'none');
+    html += row('Active edge', info.activeEdgeId ? info.activeEdgeId.substring(0, 12) + '...' : 'none');
+    html += row('Tick', info.tickCount ?? '?');
+    html += row('Nodes found', info.nodesDiscovered ?? '?');
+    html += row('Edges found', info.edgesDiscovered ?? '?');
+    html += '</div>';
+
+    popup.innerHTML = html;
+    document.getElementById('graph-panel').appendChild(popup);
+    nodeInfoPopup = popup;
+
+    document.getElementById('close-node-info').onclick = dismissNodeInfoPopup;
+  }
+
+  function handleEdgeInfo(info) {
+    if (!info) return;
+    dismissNodeInfoPopup();
+
+    const popup = document.createElement('div');
+    popup.className = 'node-info-popup';
+    popup.style.right = '10px';
+    popup.style.top = '40px';
+
+    function row(label, value) {
+      return '<div class="node-info-row"><span class="info-label">'+label+'</span><span class="info-value">'+value+'</span></div>';
+    }
+
+    let html = '<h3>Edge Details <button class="close-btn" id="close-node-info">&times;</button></h3>';
+    html += row('ID', info.id ? info.id.substring(0,12)+'...' : '?');
+    html += row('Type', info.type || '?');
+    html += row('Source', info.sourceNodeId ? info.sourceNodeId.substring(0,8)+'...' : '?');
+    html += row('Target', info.targetNodeId ? info.targetNodeId.substring(0,8)+'...' : '?');
+    html += row('Distance', info.distance != null ? Number(info.distance).toFixed(1) : '?');
+    html += row('Confidence', info.confidence != null ? Number(info.confidence).toFixed(3) : '?');
+    html += row('Tier', info.tier || '?');
+    html += row('Status', info.status || '?');
+    html += row('Traveled', info.traveled ? 'yes' : 'no');
+    html += row('Bidirectional', String(info.bidirectional));
+    html += row('Observations', String(info.observationCount || 0));
+
+    if (info.corridorMap && info.corridorMap.length > 0) {
+      html += '<div class="node-info-map"><canvas id="corridor-map-canvas" width="200" height="200" style="border:1px solid var(--border);border-radius:4px;margin-bottom:6px;background:#111"></canvas></div>';
+    } else {
+      html += '<div class="node-info-map" style="padding:8px 0;color:var(--text-dim);font-size:11px;text-align:center;border-bottom:1px solid var(--border);margin-bottom:6px">' + (info.traveled ? 'No corridor map captured' : 'Not yet traveled') + '</div>';
+    }
+
+    popup.innerHTML = html;
+    document.getElementById('graph-panel').appendChild(popup);
+    nodeInfoPopup = popup;
+    document.getElementById('close-node-info').onclick = dismissNodeInfoPopup;
+
+    // Render corridor map
+    if (info.corridorMap && info.corridorMap.length > 0) {
+      const lmc = document.getElementById('corridor-map-canvas');
+      if (lmc) {
+        const ctx = lmc.getContext('2d');
+        const cells = info.corridorMap;
+        let lmMinX = Infinity, lmMaxX = -Infinity, lmMinY = Infinity, lmMaxY = -Infinity;
+        for (const c of cells) {
+          if (c.x < lmMinX) lmMinX = c.x;
+          if (c.x > lmMaxX) lmMaxX = c.x;
+          if (c.y < lmMinY) lmMinY = c.y;
+          if (c.y > lmMaxY) lmMaxY = c.y;
+        }
+        const lmW = lmMaxX - lmMinX + 1;
+        const lmH = lmMaxY - lmMinY + 1;
+        const cs = Math.min(Math.floor(200 / lmW), Math.floor(200 / lmH), 8);
+        lmc.width = lmW * cs;
+        lmc.height = lmH * cs;
+        for (const c of cells) {
+          const rx = (c.x - lmMinX) * cs;
+          const ry = (c.y - lmMinY) * cs;
+          ctx.fillStyle = c.state === 'wall' ? '#555' : c.state === 'obstacle' ? '#854F0B' : '#3a5a4a';
+          ctx.globalAlpha = c.confidence;
+          ctx.fillRect(rx, ry, cs, cs);
+        }
+        ctx.globalAlpha = 1;
+      }
+    }
+  }
+
+  // ---- Feature 1: Target Robot Select ----
+
+  function buildTargetRobotSelect(robots){
+    const sel = document.getElementById('target-robot');
+    sel.innerHTML = '<option value="" style="color:#4fc3f7">Nearest</option>';
+    for(let i=0;i<robots.length;i++){
+      const r = robots[i];
+      const opt = document.createElement('option');
+      opt.value = r.id || 'robot-'+(i+1);
+      opt.textContent = r.id || 'Robot '+(i+1);
+      opt.style.color = ROBOT_COLORS[i % ROBOT_COLORS.length];
+      sel.appendChild(opt);
+    }
+  }
+
+  // ---- Feature 2: Color Legends ----
+
+  function buildLegends(){
+    // Remove existing legends
+    document.querySelectorAll('.legend-panel').forEach(el => el.remove());
+
+    // Map legend (starts minimized)
+    const mapLegend = document.createElement('div');
+    mapLegend.className = 'legend-panel';
+    let ml = '<div class="legend-toggle" onclick="this.nextElementSibling.classList.toggle(\'open\');this.querySelector(\'.legend-toggle-btn\').textContent=this.nextElementSibling.classList.contains(\'open\')?\'\\u25BC\':\'\\u25B6\'"><h3 style="margin:0">Map Legend</h3><span class="legend-toggle-btn">&#9654;</span></div>';
+    ml += '<div class="legend-body">';
+    ml += legendRow('#2c2c2a', 'Wall (#)');
+    ml += legendRow('#3a3a4a', 'Floor (explored)');
+    ml += legendRow('#1e1e2a', 'Unexplored');
+    ml += legendRow('#c9a84c', 'Doorway (D)');
+    ml += legendRow('#854F0B', 'Obstacle (O)');
+    ml += legendRow('#5F5E5A', 'Pillar (P)');
+    ml += legendRow('#3B6D11', 'Rough terrain (~)');
+    ml += '<div class="legend-section"><h3>Robots</h3></div>';
+    for(let i=0;i<state.robots.length;i++){
+      const r = state.robots[i];
+      ml += legendRow(ROBOT_COLORS[i%ROBOT_COLORS.length], r.id || 'Robot '+(i+1));
+    }
+    ml += legendRow('#ff4444', 'Goal marker', true);
+    ml += '</div>';
+    mapLegend.innerHTML = ml;
+    document.getElementById('map-panel').appendChild(mapLegend);
+
+    // Graph legend (starts minimized)
+    const graphLegend = document.createElement('div');
+    graphLegend.className = 'legend-panel';
+    let gl = '<div class="legend-toggle" onclick="this.nextElementSibling.classList.toggle(\'open\');this.querySelector(\'.legend-toggle-btn\').textContent=this.nextElementSibling.classList.contains(\'open\')?\'\\u25BC\':\'\\u25B6\'"><h3 style="margin:0">Confidence Tiers</h3><span class="legend-toggle-btn">&#9654;</span></div>';
+    gl += '<div class="legend-body">';
+    gl += legendRow('#444441', 'Dead (&lt;0.10)');
+    gl += legendRow('#854F0B', 'Candidate (0.10-0.35)');
+    gl += legendRow('#c9a84c', 'Provisional (0.35-0.65)');
+    gl += legendRow('#5ec4b6', 'Committed (0.65-0.85)');
+    gl += legendRow('#e8c170', 'Anchored (&gt;0.85)');
+    gl += '<div class="legend-section"><h3>Edges</h3></div>';
+    gl += '<div class="legend-row" style="color:var(--text-dim)">Solid = traveled, Dashed = untraveled</div>';
+    gl += '<div class="legend-row" style="color:var(--text-dim)">Red dashed = blocked</div>';
+    gl += '<div class="legend-section"><h3>Nodes</h3></div>';
+    gl += '<div class="legend-row" style="color:var(--text-dim)">Filled = explored, Hollow = unexplored</div>';
+    gl += '<div class="legend-row" style="color:var(--text-dim)">Gold ring = frontier</div>';
+    gl += '<div class="legend-row" style="color:var(--text-dim)">Diamond = robot position</div>';
+    gl += '</div>';
+    graphLegend.innerHTML = gl;
+    document.getElementById('graph-panel').appendChild(graphLegend);
+  }
+
+  function legendRow(color, label, isDiamond){
+    if(isDiamond){
+      return '<div class="legend-row"><span class="legend-swatch" style="background:'+color+';width:10px;height:10px;transform:rotate(45deg)"></span><span>'+label+'</span></div>';
+    }
+    return '<div class="legend-row"><span class="legend-swatch" style="background:'+color+'"></span><span>'+label+'</span></div>';
+  }
+
+  function resizeCanvases(){
+    const mapPanel = document.getElementById('map-panel');
+    const graphPanel = document.getElementById('graph-panel');
+    const mw = mapPanel.clientWidth;
+    const mh = mapPanel.clientHeight - 28;
+    const gw = graphPanel.clientWidth;
+    const gh = graphPanel.clientHeight - 28;
+
+    if(state.width > 0 && state.height > 0){
+      cellSize = Math.max(2, Math.min(Math.floor(mw / state.width), Math.floor(mh / state.height)));
+    }
+
+    mapCanvas.width = state.width * cellSize;
+    mapCanvas.height = state.height * cellSize;
+    // CSS size must match pixel size exactly (no stretching) to keep circles round
+    mapCanvas.style.width = mapCanvas.width + 'px';
+    mapCanvas.style.height = mapCanvas.height + 'px';
+    graphCanvas.width = gw * (window.devicePixelRatio || 1);
+    graphCanvas.height = gh * (window.devicePixelRatio || 1);
+    graphCanvas.style.width = gw + 'px';
+    graphCanvas.style.height = gh + 'px';
+    graphCtx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+  }
+
+  function renderStaticGrid(){
+    if(!state.grid) return;
+    const oc = document.createElement('canvas');
+    oc.width = state.width * cellSize;
+    oc.height = state.height * cellSize;
+    const ctx = oc.getContext('2d');
+    for(let y=0;y<state.height;y++){
+      for(let x=0;x<state.width;x++){
+        const cell = state.grid[y]?.[x] || '#';
+        ctx.fillStyle = CELL_COLORS[cell] || '#3a3a4a';
+        ctx.fillRect(x*cellSize, y*cellSize, cellSize, cellSize);
+      }
+    }
+    offscreenGrid = oc;
+  }
+
+  function renderMapFrame(){
+    if(!state.grid) return;
+    mapCtx.fillStyle = UNEXPLORED;
+    mapCtx.fillRect(0,0,mapCanvas.width,mapCanvas.height);
+
+    for(let y=0;y<state.height;y++){
+      for(let x=0;x<state.width;x++){
+        const cell = state.grid[y]?.[x] || '#';
+        const key = x+','+y;
+        if(cell === '#' || cell === 'O' || cell === 'P'){
+          mapCtx.fillStyle = CELL_COLORS[cell] || '#2c2c2a';
+          mapCtx.fillRect(x*cellSize, y*cellSize, cellSize, cellSize);
+        } else if(state.explored.has(key)){
+          mapCtx.fillStyle = CELL_COLORS[cell] || '#3a3a4a';
+          mapCtx.fillRect(x*cellSize, y*cellSize, cellSize, cellSize);
+        }
+      }
+    }
+
+    // Draw goal markers
+    for(const goal of goalMarkers){
+      const gx = goal.x * cellSize;
+      const gy = goal.y * cellSize;
+      const ri = state.robots.findIndex(r => r && r.id === goal.robotId);
+      const color = ri >= 0 ? ROBOT_COLORS[ri % ROBOT_COLORS.length] : '#ff4444';
+
+      // Pulsing crosshair marker
+      mapCtx.strokeStyle = color;
+      mapCtx.lineWidth = 2;
+      const sz = Math.max(cellSize * 0.8, 6);
+
+      // Cross
+      mapCtx.beginPath();
+      mapCtx.moveTo(gx - sz, gy);
+      mapCtx.lineTo(gx + sz, gy);
+      mapCtx.moveTo(gx, gy - sz);
+      mapCtx.lineTo(gx, gy + sz);
+      mapCtx.stroke();
+
+      // Circle
+      mapCtx.beginPath();
+      mapCtx.arc(gx, gy, sz * 0.7, 0, Math.PI*2);
+      mapCtx.stroke();
+
+      // Label
+      mapCtx.fillStyle = color;
+      mapCtx.font = '10px system-ui';
+      mapCtx.textAlign = 'center';
+      mapCtx.fillText(goal.robotId || 'goal', gx, gy - sz - 3);
+    }
+
+    for(let ri=0;ri<state.robots.length;ri++){
+      const r = state.robots[ri];
+      if(!r) continue;
+      const color = ROBOT_COLORS[ri % ROBOT_COLORS.length];
+      const trail = r.trail || [];
+      for(let ti=0;ti<trail.length;ti++){
+        const t = trail[ti];
+        const alpha = 0.15 + 0.6 * (ti / trail.length);
+        mapCtx.globalAlpha = alpha;
+        mapCtx.fillStyle = color;
+        mapCtx.beginPath();
+        mapCtx.arc(t.x*cellSize, t.y*cellSize, cellSize*0.12, 0, Math.PI*2);
+        mapCtx.fill();
+      }
+      mapCtx.globalAlpha = 1;
+
+      const cx = r.x*cellSize;
+      const cy = r.y*cellSize;
+      const radius = Math.max(cellSize*0.45, 4);
+
+      mapCtx.fillStyle = color;
+      mapCtx.beginPath();
+      mapCtx.arc(cx, cy, radius, 0, Math.PI*2);
+      mapCtx.fill();
+
+      mapCtx.strokeStyle = '#1e1e2a';
+      mapCtx.lineWidth = 1;
+      mapCtx.stroke();
+
+      if(r.heading != null){
+        const hsx = cx + Math.cos(r.heading) * radius;
+        const hsy = cy + Math.sin(r.heading) * radius;
+        const hex = cx + Math.cos(r.heading) * radius * 2.0;
+        const hey = cy + Math.sin(r.heading) * radius * 2.0;
+        mapCtx.strokeStyle = color;
+        mapCtx.lineWidth = 2;
+        mapCtx.beginPath();
+        mapCtx.moveTo(hsx, hsy);
+        mapCtx.lineTo(hex, hey);
+        mapCtx.stroke();
+      }
+    }
+
+    // Topology overlay on the real-world map (user-only, robots can't see this)
+    if(document.getElementById('overlay-toggle').checked){
+      const nodes = state.graph.nodes || [];
+      const edges = state.graph.edges || [];
+      if(nodes.length > 0){
+        const nodeMap = new Map();
+        for(const n of nodes) nodeMap.set(n.id, n);
+
+        // Draw edges
+        mapCtx.globalAlpha = 0.5;
+        for(const e of edges){
+          const src = nodeMap.get(e.sourceId);
+          const tgt = nodeMap.get(e.targetId);
+          if(!src || !tgt) continue;
+          const isBlocked = e.status === 'blocked';
+          mapCtx.strokeStyle = isBlocked ? '#ff5252' : '#4fc3f7';
+          mapCtx.lineWidth = isBlocked ? 1.5 : 1;
+          mapCtx.setLineDash(isBlocked ? [3,3] : []);
+          mapCtx.beginPath();
+          mapCtx.moveTo(src.x * cellSize, src.y * cellSize);
+          mapCtx.lineTo(tgt.x * cellSize, tgt.y * cellSize);
+          mapCtx.stroke();
+        }
+        mapCtx.setLineDash([]);
+
+        // Draw nodes
+        for(const n of nodes){
+          const nx = n.x * cellSize;
+          const ny = n.y * cellSize;
+          const isWall = n.type === 'wall' || n.type === 'obstacle';
+          const color = isWall ? '#ff8800' : (TIER_COLORS[n.tier] || '#4fc3f7');
+          mapCtx.fillStyle = color;
+          mapCtx.globalAlpha = isWall ? 0.6 : 0.8;
+          if (isWall) {
+            // Wall nodes drawn as small squares
+            const s = 3;
+            mapCtx.fillRect(nx - s, ny - s, s * 2, s * 2);
+            mapCtx.strokeStyle = '#000';
+            mapCtx.lineWidth = 0.5;
+            mapCtx.strokeRect(nx - s, ny - s, s * 2, s * 2);
+          } else {
+            const r = n.type === 'room' ? 5 : n.type === 'junction' ? 4 : 3;
+            mapCtx.beginPath();
+            mapCtx.arc(nx, ny, r, 0, Math.PI*2);
+            mapCtx.fill();
+            mapCtx.strokeStyle = '#000';
+            mapCtx.lineWidth = 0.5;
+            mapCtx.stroke();
+          }
+        }
+        mapCtx.globalAlpha = 1;
+      }
+    }
+  }
+
+  function renderGraphFrame(){
+    const w = graphCanvas.width / (window.devicePixelRatio || 1);
+    const h = graphCanvas.height / (window.devicePixelRatio || 1);
+    graphCtx.clearRect(0,0,w,h);
+
+    const nodes = state.graph.nodes || [];
+    const edges = state.graph.edges || [];
+    if(nodes.length === 0) {
+      graphCtx.fillStyle = '#a09898';
+      graphCtx.font = '14px system-ui';
+      graphCtx.textAlign = 'center';
+      graphCtx.fillText('Waiting for nodes...', w/2, h/2);
+      graphTransform = null;
+      return;
+    }
+
+    // Build node lookup
+    const nodeMap = new Map();
+    for(const n of nodes) nodeMap.set(n.id, n);
+
+    // Use FIXED world bounds (matching the map grid) instead of auto-fitting
+    // to the node bounding box. This prevents jumping when nodes are added.
+    const minX = 0;
+    const minY = 0;
+    const rangeX = Math.max(state.width, 1);
+    const rangeY = Math.max(state.height, 1);
+    const pad = 20;
+    const scaleX = (w - pad * 2) / rangeX;
+    const scaleY = (h - pad * 2) / rangeY;
+    const scale = Math.min(scaleX, scaleY);
+    const ox = pad + (w - pad * 2 - rangeX * scale) / 2;
+    const oy = pad + (h - pad * 2 - rangeY * scale) / 2;
+    function tx(x){return ox + (x - minX) * scale}
+    function ty(y){return oy + (y - minY) * scale}
+
+    // Store transform for click detection
+    graphTransform = { minX, minY, scale, ox, oy };
+
+    // Draw edges - separate by state: traveled (solid), untraveled (dashed), blocked (red dashed)
+    const traveledEdges = new Map();
+    const untraveledEdges = new Map();
+    const blockedEdges = new Map();
+    for(const e of edges){
+      const src = nodeMap.get(e.sourceId);
+      const tgt = nodeMap.get(e.targetId);
+      if(!src || !tgt) continue;
+      const color = TIER_COLORS[e.tier] || '#444441';
+      const isBlocked = e.status === 'blocked';
+      const isTraveled = e.traveled === true;
+      const bucket = isBlocked ? blockedEdges : isTraveled ? traveledEdges : untraveledEdges;
+      if(!bucket.has(color)) bucket.set(color, []);
+      bucket.get(color).push({src, tgt});
+    }
+    // Draw traveled edges as solid lines
+    for(const [color, pairs] of traveledEdges){
+      graphCtx.strokeStyle = color;
+      graphCtx.lineWidth = 1.5;
+      graphCtx.setLineDash([]);
+      graphCtx.beginPath();
+      for(const {src, tgt} of pairs){
+        graphCtx.moveTo(tx(src.x), ty(src.y));
+        graphCtx.lineTo(tx(tgt.x), ty(tgt.y));
+      }
+      graphCtx.stroke();
+    }
+    // Draw untraveled edges as dashed lines (visibility-verified but not traversed)
+    for(const [color, pairs] of untraveledEdges){
+      graphCtx.strokeStyle = color;
+      graphCtx.lineWidth = 1;
+      graphCtx.setLineDash([4, 3]);
+      graphCtx.globalAlpha = 0.6;
+      graphCtx.beginPath();
+      for(const {src, tgt} of pairs){
+        graphCtx.moveTo(tx(src.x), ty(src.y));
+        graphCtx.lineTo(tx(tgt.x), ty(tgt.y));
+      }
+      graphCtx.stroke();
+      graphCtx.globalAlpha = 1.0;
+    }
+    // Draw blocked edges as red dashed lines
+    for(const [color, pairs] of blockedEdges){
+      graphCtx.strokeStyle = '#ff5252';
+      graphCtx.lineWidth = 1.5;
+      graphCtx.setLineDash([4, 4]);
+      graphCtx.beginPath();
+      for(const {src, tgt} of pairs){
+        graphCtx.moveTo(tx(src.x), ty(src.y));
+        graphCtx.lineTo(tx(tgt.x), ty(tgt.y));
+      }
+      graphCtx.stroke();
+    }
+    graphCtx.setLineDash([]);
+
+    for(const n of nodes){
+      const nx=tx(n.x), ny=ty(n.y);
+      const isWall = n.type === 'wall' || n.type === 'obstacle';
+      let r=6;
+      if(n.type==='room'||n.type==='Room')r=10;
+      else if(n.type==='junction'||n.type==='Junction')r=7;
+      else if(isWall)r=4;
+
+      const nodeColor = isWall ? '#ff8800' : (TIER_COLORS[n.tier] || '#444441');
+      graphCtx.globalAlpha = isWall ? 0.6 : 1.0;
+      if (isWall) {
+        graphCtx.fillStyle = nodeColor;
+        graphCtx.fillRect(nx-r, ny-r, r*2, r*2);
+      } else if (n.explored) {
+        graphCtx.fillStyle = nodeColor;
+        graphCtx.beginPath();
+        graphCtx.arc(nx,ny,r,0,Math.PI*2);
+        graphCtx.fill();
+      } else {
+        graphCtx.strokeStyle = nodeColor;
+        graphCtx.lineWidth = 2;
+        graphCtx.beginPath();
+        graphCtx.arc(nx,ny,r,0,Math.PI*2);
+        graphCtx.stroke();
+      }
+      graphCtx.globalAlpha = 1.0;
+
+      if(n.isFrontier){
+        graphCtx.strokeStyle = '#e8c170';
+        graphCtx.lineWidth = 2;
+        graphCtx.stroke();
+      }
+
+      // Node type labels removed — use click popup for details
+    }
+
+    for(let ri=0;ri<state.robots.length;ri++){
+      const r=state.robots[ri];
+      if(!r)continue;
+      const nx=tx(r.x),ny=ty(r.y);
+      const frame = chickenFrames[(chickenAnimTick + ri) % 3];
+      const mirror = r.heading != null && (r.heading > Math.PI/2 || r.heading < -Math.PI/2);
+      graphCtx.save();
+      graphCtx.translate(nx, ny);
+      if (mirror) graphCtx.scale(-1, 1);
+      graphCtx.drawImage(frame, -CHICK_W/2 - 3*CHICK_SCALE, -CHICK_H/2);
+      graphCtx.restore();
+    }
+  }
+
+  function updateMetrics(){
+    const m = state.metrics;
+    const cov = m.coverage != null ? (m.coverage * 100).toFixed(1) : '0';
+    document.getElementById('m-coverage').textContent = cov + '%';
+    document.getElementById('m-coverage-bar').style.width = cov + '%';
+    document.getElementById('m-nodes').textContent = m.nodeCount ?? 0;
+    document.getElementById('m-edges').textContent = m.edgeCount ?? 0;
+    document.getElementById('m-tick').textContent = m.tickCount ?? 0;
+    document.getElementById('m-explored').textContent = (m.totalExplored ?? 0) + ' / ' + (m.totalTraversable ?? 0);
+    if(state.complete){
+      document.getElementById('m-coverage').style.color = '#e8c170';
+    }
+  }
+
+  function buildRobotStatusBar(robots){
+    const bar = document.getElementById('robots-bar');
+    bar.innerHTML = '';
+    for(let i=0;i<robots.length;i++){
+      const r = robots[i];
+      const div = document.createElement('div');
+      div.className = 'robot-status';
+      div.id = 'robot-'+i;
+      div.innerHTML = '<span class="robot-dot" style="background:'+ROBOT_COLORS[i%ROBOT_COLORS.length]+'"></span>'
+        +'<span class="robot-name">'+(r.id||'Robot '+(i+1))+'</span>'
+        +'<span class="status-badge">idle</span>'
+        +'<span class="robot-info"></span>';
+      bar.appendChild(div);
+    }
+  }
+
+  function updateRobotStatusBar(){
+    for(let i=0;i<state.robots.length;i++){
+      const r = state.robots[i];
+      const div = document.getElementById('robot-'+i);
+      if(!div||!r)continue;
+      const badge = div.querySelector('.status-badge');
+      const info = div.querySelector('.robot-info');
+      badge.textContent = r.status || 'idle';
+      badge.className = 'status-badge ' + (r.status || 'idle');
+      const posErr = r.positionError !== undefined ? r.positionError.toFixed(2) : '?';
+      const cumDrift = r.slamDrift !== undefined ? r.slamDrift.toFixed(3) : '?';
+      const bx = r.believedX !== undefined ? r.believedX.toFixed(1) : '?';
+      const by = r.believedY !== undefined ? r.believedY.toFixed(1) : '?';
+      info.textContent = 'err:'+posErr+'m drift:'+cumDrift+'m believed:('+bx+','+by+') actual:('+r.x.toFixed(1)+','+r.y.toFixed(1)+') '+r.cellsExplored+' cells';
+    }
+  }
+
+  document.getElementById('btn-play').onclick = () => ws && ws.send(JSON.stringify({type:'play'}));
+  document.getElementById('btn-pause').onclick = () => ws && ws.send(JSON.stringify({type:'pause'}));
+  document.getElementById('btn-step').onclick = () => ws && ws.send(JSON.stringify({type:'step'}));
+  document.getElementById('btn-reset').onclick = () => {
+    const map = document.getElementById('map-select').value;
+    ws && ws.send(JSON.stringify({type:'reset',map:map}));
+  };
+  document.getElementById('btn-validate').onclick = () => {
+    ws && ws.send(JSON.stringify({type:'validate'}));
+  };
+  document.getElementById('map-select').onchange = function(){
+    ws && ws.send(JSON.stringify({type:'loadMap',map:this.value}));
+  };
+  document.getElementById('speed-slider').oninput = function(){
+    document.getElementById('speed-val').textContent = this.value;
+    ws && ws.send(JSON.stringify({type:'speed',value:parseInt(this.value)}));
+  };
+
+  // ---- Map Edit Mode ----
+  let editMode = null; // null | 'wall' | 'obstacle' | 'erase'
+  let isEditDragging = false;
+
+  function setEditMode(mode) {
+    editMode = mode;
+    // Highlight active button
+    document.getElementById('edit-wall').style.outline = mode === 'wall' ? '2px solid #fff' : 'none';
+    document.getElementById('edit-obstacle').style.outline = mode === 'obstacle' ? '2px solid #fff' : 'none';
+    document.getElementById('edit-erase').style.outline = mode === 'erase' ? '2px solid #fff' : 'none';
+    mapCanvas.style.cursor = mode ? 'crosshair' : 'default';
+  }
+
+  document.getElementById('edit-wall').addEventListener('click', () => setEditMode(editMode === 'wall' ? null : 'wall'));
+  document.getElementById('edit-obstacle').addEventListener('click', () => setEditMode(editMode === 'obstacle' ? null : 'obstacle'));
+  document.getElementById('edit-erase').addEventListener('click', () => setEditMode(editMode === 'erase' ? null : 'erase'));
+
+  // Selecting a target robot exits edit mode
+  document.getElementById('target-robot').addEventListener('change', () => setEditMode(null));
+  document.getElementById('edit-off').addEventListener('click', () => setEditMode(null));
+
+  function editCellAt(e) {
+    if (!editMode || !state.grid || !ws) return;
+    const rect = mapCanvas.getBoundingClientRect();
+    const scaleX = mapCanvas.width / rect.width;
+    const scaleY = mapCanvas.height / rect.height;
+    const px = (e.clientX - rect.left) * scaleX;
+    const py = (e.clientY - rect.top) * scaleY;
+    const gx = Math.floor(px / cellSize);
+    const gy = Math.floor(py / cellSize);
+    if (gx < 0 || gx >= state.width || gy < 0 || gy >= state.height) return;
+
+    let cellType;
+    if (editMode === 'wall') cellType = 'wall';
+    else if (editMode === 'obstacle') cellType = 'obstacle';
+    else if (editMode === 'erase') cellType = 'floor';
+    else return;
+
+    // Update local grid immediately for responsive feel
+    if (state.grid[gy]) {
+      state.grid[gy][gx] = cellType === 'wall' ? '#' : cellType === 'obstacle' ? 'O' : '.';
+    }
+
+    ws.send(JSON.stringify({ type: 'editCell', x: gx, y: gy, cellType }));
+    renderMapFrame();
+  }
+
+  mapCanvas.addEventListener('mousedown', (e) => {
+    if (editMode) {
+      isEditDragging = true;
+      editCellAt(e);
+      e.preventDefault();
+    }
+  });
+  mapCanvas.addEventListener('mousemove', (e) => {
+    if (isEditDragging && editMode) {
+      editCellAt(e);
+    }
+  });
+  mapCanvas.addEventListener('mouseup', () => { isEditDragging = false; });
+  mapCanvas.addEventListener('mouseleave', () => { isEditDragging = false; });
+
+  // Feature 1: Click on map to set robot goal (only when NOT in edit mode)
+  mapCanvas.addEventListener('click', (e) => {
+    if (editMode) return; // Edit mode handles its own clicks
+    if(!state.grid || !ws) return;
+    const rect = mapCanvas.getBoundingClientRect();
+    const scaleX = mapCanvas.width / rect.width;
+    const scaleY = mapCanvas.height / rect.height;
+    const px = (e.clientX - rect.left) * scaleX;
+    const py = (e.clientY - rect.top) * scaleY;
+    // Convert pixel to world coordinates (continuous, not grid index)
+    const wx = px / cellSize;
+    const wy = py / cellSize;
+    if(wx >= 0 && wx < state.width && wy >= 0 && wy < state.height){
+      let selectedRobot = document.getElementById('target-robot').value || undefined;
+      if (!selectedRobot && state.robots.length > 0) {
+        // "Nearest" mode: find the robot closest to the click
+        let bestDist = Infinity;
+        for (const rb of state.robots) {
+          if (!rb) continue;
+          const d = Math.sqrt((rb.x - wx) ** 2 + (rb.y - wy) ** 2);
+          if (d < bestDist) { bestDist = d; selectedRobot = rb.id; }
+        }
+      }
+      const msg = {type:'target', x:wx, y:wy};
+      if(selectedRobot) msg.robotId = selectedRobot;
+      ws.send(JSON.stringify(msg));
+
+      // Add/update goal marker
+      const robotId = selectedRobot || (state.robots.length > 0 ? state.robots[0].id : 'goal');
+      goalMarkers = goalMarkers.filter(g => g.robotId !== robotId);
+      goalMarkers.push({robotId: robotId, x: wx, y: wy});
+      renderMapFrame();
+    }
+  });
+
+  // Feature 3: Click on graph node/robot for info popup
+  graphCanvas.addEventListener('click', (e) => {
+    if(!graphTransform || !ws) return;
+    const nodes = state.graph.nodes || [];
+
+    const rect = graphCanvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    const cx = (e.clientX - rect.left);
+    const cy = (e.clientY - rect.top);
+
+    // Check robots first (chickens)
+    const tx = (x) => graphTransform.ox + (x - graphTransform.minX) * graphTransform.scale;
+    const ty = (y) => graphTransform.oy + (y - graphTransform.minY) * graphTransform.scale;
+    for (const rb of state.robots) {
+      if (!rb) continue;
+      const rx = tx(rb.x), ry = ty(rb.y);
+      const d = Math.sqrt((cx - rx) ** 2 + (cy - ry) ** 2);
+      if (d < CHICK_W) {
+        ws.send(JSON.stringify({type:'robotInfo', robotId: rb.id}));
+        return;
+      }
+    }
+
+    if(nodes.length === 0) return;
+
+    // Find closest node within click radius
+    let bestNode = null;
+    let bestDist = Infinity;
+    const clickRadius = 16; // pixels
+
+    for(const n of nodes){
+      const nx = graphTransform.ox + (n.x - graphTransform.minX) * graphTransform.scale;
+      const ny = graphTransform.oy + (n.y - graphTransform.minY) * graphTransform.scale;
+      const d = Math.sqrt((cx - nx) ** 2 + (cy - ny) ** 2);
+      if(d < clickRadius && d < bestDist){
+        bestDist = d;
+        bestNode = n;
+      }
+    }
+
+    if(bestNode){
+      ws.send(JSON.stringify({type:'nodeInfo', nodeId: bestNode.id}));
+    } else {
+      // Check if click is near an edge
+      const edges = state.graph.edges || [];
+      const nodeMap = new Map();
+      for(const n of nodes) nodeMap.set(n.id, n);
+      let bestEdge = null;
+      let bestEdgeDist = 20; // max 20px from edge line
+      for(const edge of edges){
+        const src = nodeMap.get(edge.sourceId);
+        const tgt = nodeMap.get(edge.targetId);
+        if(!src || !tgt) continue;
+        const sx = graphTransform.ox + (src.x - graphTransform.minX) * graphTransform.scale;
+        const sy = graphTransform.oy + (src.y - graphTransform.minY) * graphTransform.scale;
+        const tx = graphTransform.ox + (tgt.x - graphTransform.minX) * graphTransform.scale;
+        const ty = graphTransform.oy + (tgt.y - graphTransform.minY) * graphTransform.scale;
+        // Point-to-line-segment distance
+        const dx = tx-sx, dy = ty-sy;
+        const len2 = dx*dx+dy*dy;
+        if(len2 === 0) continue;
+        let t = ((cx-sx)*dx+(cy-sy)*dy)/len2;
+        t = Math.max(0, Math.min(1, t));
+        const px = sx+t*dx, py = sy+t*dy;
+        const d = Math.sqrt((cx-px)**2+(cy-py)**2);
+        if(d < bestEdgeDist){ bestEdgeDist = d; bestEdge = edge; }
+      }
+      if(bestEdge){
+        ws.send(JSON.stringify({type:'edgeInfo', edgeId: bestEdge.id}));
+      } else {
+        dismissNodeInfoPopup();
+      }
+    }
+  });
+
+  window.addEventListener('resize', () => {
+    resizeCanvases();
+    renderStaticGrid();
+    renderMapFrame();
+    renderGraphFrame();
+  });
+
+  connect();
+})();
+</script>
+</body>
+</html>

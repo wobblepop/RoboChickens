@@ -1,0 +1,1498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SLAM Explorer — Algorithm Pseudocode</title>
+<style>
+  :root {
+    --bg: #1a1b26;
+    --bg-section: #1e1f2e;
+    --bg-hover: #252637;
+    --border: #3b3d57;
+    --text: #c0caf5;
+    --text-dim: #565f89;
+    --phase: #7aa2f7;
+    --func: #ff9e64;
+    --cond: #9ece6a;
+    --comment: #565f89;
+    --keyword: #bb9af7;
+    --literal: #e0af68;
+    --warning: #f7768e;
+    --accent: #7dcfff;
+    --indent-guide: #2f3146;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13.5px;
+    line-height: 1.65;
+    padding: 0;
+  }
+
+  /* ── Header ─────────────────────────────────────────────────── */
+
+  header {
+    background: linear-gradient(135deg, #1e1f2e 0%, #24253a 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 28px 40px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  header .title-group h1 {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--phase);
+    letter-spacing: 0.5px;
+  }
+
+  header .title-group p {
+    font-size: 12.5px;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+
+  header .controls {
+    display: flex;
+    gap: 10px;
+  }
+
+  header button {
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 6px 16px;
+    border-radius: 5px;
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+
+  header button:hover {
+    background: var(--bg-hover);
+    border-color: var(--phase);
+  }
+
+  /* ── Legend ──────────────────────────────────────────────────── */
+
+  .legend {
+    background: var(--bg-section);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 40px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    font-size: 11.5px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .legend-swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  /* ── Content ────────────────────────────────────────────────── */
+
+  main {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px 40px 80px;
+  }
+
+  /* ── Section (collapsible function) ─────────────────────────── */
+
+  .section {
+    margin-bottom: 2px;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 12px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background 0.12s;
+    user-select: none;
+  }
+
+  .section-header:hover {
+    background: var(--bg-hover);
+  }
+
+  .toggle {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-top: 2px;
+    font-weight: bold;
+  }
+
+  .section.open > .section-header .toggle { color: var(--phase); }
+
+  .section-title {
+    flex: 1;
+  }
+
+  .section-title .func-name {
+    color: var(--func);
+    font-weight: 600;
+  }
+
+  .section-title .func-sig {
+    color: var(--text-dim);
+  }
+
+  .section-title .section-label {
+    font-size: 11px;
+    color: var(--phase);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .section-title .section-desc {
+    color: var(--text-dim);
+    font-size: 12px;
+    font-style: italic;
+    margin-left: 8px;
+  }
+
+  .section-body {
+    display: none;
+    padding: 4px 0 8px 38px;
+    border-left: 2px solid var(--indent-guide);
+    margin-left: 8px;
+  }
+
+  .section.open > .section-body {
+    display: block;
+  }
+
+  /* ── Pseudocode lines ───────────────────────────────────────── */
+
+  .line {
+    padding: 1.5px 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .line.blank {
+    height: 10px;
+  }
+
+  .indent-1 { padding-left: 24px; }
+  .indent-2 { padding-left: 48px; }
+  .indent-3 { padding-left: 72px; }
+  .indent-4 { padding-left: 96px; }
+
+  .kw { color: var(--keyword); font-weight: 500; }
+  .fn { color: var(--func); font-weight: 500; }
+  .cond { color: var(--cond); }
+  .cm { color: var(--comment); font-style: italic; }
+  .lit { color: var(--literal); }
+  .ph { color: var(--phase); font-weight: 600; }
+  .warn { color: var(--warning); font-weight: 700; }
+  .acc { color: var(--accent); }
+  .tx { color: var(--text); }
+
+  /* clickable function references */
+  .fn-ref {
+    color: var(--func);
+    font-weight: 500;
+    cursor: pointer;
+    border-bottom: 1px dotted var(--func);
+    transition: color 0.12s;
+  }
+
+  .fn-ref:hover {
+    color: #ffb899;
+  }
+
+  /* ── Annotation boxes ───────────────────────────────────────── */
+
+  .annotation {
+    background: #252637;
+    border-left: 3px solid var(--phase);
+    padding: 8px 14px;
+    margin: 8px 0;
+    border-radius: 0 4px 4px 0;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text);
+  }
+
+  .annotation.warn-box {
+    border-left-color: var(--warning);
+  }
+
+  .annotation.rule-box {
+    border-left-color: var(--literal);
+  }
+
+  .annotation .label {
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 10.5px;
+    letter-spacing: 0.6px;
+    margin-bottom: 3px;
+    display: block;
+  }
+
+  .annotation.warn-box .label { color: var(--warning); }
+  .annotation.rule-box .label { color: var(--literal); }
+  .annotation .label { color: var(--phase); }
+
+  /* ── Module separator ───────────────────────────────────────── */
+
+  .module-header {
+    margin-top: 32px;
+    margin-bottom: 12px;
+    padding: 10px 14px;
+    background: linear-gradient(90deg, var(--bg-section), transparent);
+    border-left: 3px solid var(--phase);
+    border-radius: 0 4px 4px 0;
+  }
+
+  .module-header h2 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--phase);
+    letter-spacing: 0.3px;
+  }
+
+  .module-header .module-file {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+
+  /* ── Priority list ──────────────────────────────────────────── */
+
+  .priority-list {
+    margin: 6px 0;
+  }
+
+  .priority-item {
+    display: flex;
+    gap: 10px;
+    padding: 3px 0;
+  }
+
+  .priority-badge {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    border-radius: 3px;
+    background: var(--phase);
+    color: var(--bg);
+    font-size: 11px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .priority-badge.p0 { background: #f7768e; }
+  .priority-badge.p1 { background: #ff9e64; }
+  .priority-badge.p2 { background: #e0af68; }
+  .priority-badge.p3 { background: #9ece6a; }
+  .priority-badge.p4 { background: #7dcfff; }
+  .priority-badge.fb { background: var(--text-dim); }
+
+  /* ── Overview diagram ───────────────────────────────────────── */
+
+  .overview-flow {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin: 16px 0 8px;
+    flex-wrap: wrap;
+  }
+
+  .flow-box {
+    background: var(--bg);
+    border: 1.5px solid var(--phase);
+    border-radius: 6px;
+    padding: 10px 18px;
+    text-align: center;
+    min-width: 110px;
+  }
+
+  .flow-box .step-num {
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .flow-box .step-name {
+    color: var(--phase);
+    font-weight: 600;
+    font-size: 14px;
+  }
+
+  .flow-box .step-desc {
+    color: var(--text-dim);
+    font-size: 10.5px;
+    margin-top: 2px;
+  }
+
+  .flow-arrow {
+    color: var(--text-dim);
+    font-size: 20px;
+    padding: 0 6px;
+    flex-shrink: 0;
+  }
+
+  .flow-loop {
+    color: var(--text-dim);
+    font-size: 11px;
+    margin-top: 6px;
+    text-align: center;
+    width: 100%;
+  }
+
+  /* ── Responsive ─────────────────────────────────────────────── */
+
+  @media (max-width: 700px) {
+    header { padding: 16px 16px; }
+    .legend { padding: 10px 16px; }
+    main { padding: 16px 10px 60px; }
+    .section-body { padding-left: 18px; }
+    .overview-flow { flex-direction: column; }
+    .flow-arrow { transform: rotate(90deg); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title-group">
+    <h1>SLAM Explorer &mdash; Exploration Algorithm</h1>
+    <p>Multi-robot warehouse mapping &middot; Pseudocode reference</p>
+  </div>
+  <div class="controls">
+    <button onclick="expandAll()">Expand All</button>
+    <button onclick="collapseAll()">Collapse All</button>
+  </div>
+</header>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-swatch" style="background:var(--phase)"></div> Phase / Module</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:var(--func)"></div> Function name</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:var(--cond)"></div> Condition</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:var(--keyword)"></div> Keyword</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:var(--literal)"></div> Literal / value</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:var(--warning)"></div> Rule / warning</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:var(--comment)"></div> Comment</div>
+</div>
+
+<main id="content">
+
+<!-- ================================================================== -->
+<!-- OVERVIEW -->
+<!-- ================================================================== -->
+
+<div class="module-header">
+  <h2>Exploration Cycle Overview</h2>
+  <div class="module-file">Each robot independently runs a 4-phase cycle every simulation tick</div>
+</div>
+
+<div class="overview-flow">
+  <div class="flow-box">
+    <div class="step-num">Step 1</div>
+    <div class="step-name">ARRIVING</div>
+    <div class="step-desc">Reach node, snap position, drift correct</div>
+  </div>
+  <div class="flow-arrow">&rarr;</div>
+  <div class="flow-box">
+    <div class="step-num">Step 2</div>
+    <div class="step-name">SCANNING</div>
+    <div class="step-desc">360&deg; feature detection, node/edge creation</div>
+  </div>
+  <div class="flow-arrow">&rarr;</div>
+  <div class="flow-box">
+    <div class="step-num">Step 3</div>
+    <div class="step-name">CHOOSING</div>
+    <div class="step-desc">Pick next edge by exploration priority</div>
+  </div>
+  <div class="flow-arrow">&rarr;</div>
+  <div class="flow-box">
+    <div class="step-num">Step 4</div>
+    <div class="step-name">TRAVELING</div>
+    <div class="step-desc">Drive to destination, collect corridor data</div>
+  </div>
+</div>
+<div class="flow-loop">Loops back to ARRIVING on reach &middot; Wall-stop and stuck recovery also restart from ARRIVING</div>
+
+
+<!-- ================================================================== -->
+<!-- MODULE: ROBOT AGENT -->
+<!-- ================================================================== -->
+
+<div class="module-header">
+  <h2>Robot Agent &mdash; Main Exploration Loop</h2>
+  <div class="module-file">src/robot/robot-agent.ts</div>
+</div>
+
+<!-- ── processTick ─────────────────────────────────────────────── -->
+
+<div class="section" id="fn-processTick">
+  <div class="section-header" onclick="toggle(this)">
+    <div class="toggle">+</div>
+    <div class="section-title">
+      <span class="func-name">processTick</span><span class="func-sig">(lidar, odometry) &rarr; MotorCommand</span>
+      <span class="section-desc">Main loop &mdash; called every simulation tick</span>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="line"><span class="cm">-- Called once per simulation tick with fresh LiDAR + odometry --</span></div>
+    <div class="line">tickCount++</div>
+    <div class="line blank"></div>
+    <div class="line"><span class="cond">if</span> first tick (not initialized):</div>
+    <div class="line indent-1">initialize SLAM engine</div>
+    <div class="line indent-1">set pose to exact origin <span class="lit">(0, 0, 0)</span></div>
+    <div class="line indent-1"><span class="cm">-- Do NOT run processSensorData on tick 1</span></div>
+    <div class="line indent-1"><span class="cm">-- Particle noise would drift the starting pose away from origin</span></div>
+    <div class="line indent-1"><span class="kw">call</span> <span class="fn-ref" data-target="fn-doArriving">doArriving</span>(lidar, origin_pose)</div>
+    <div class="line indent-1"><span class="kw">return</span> command</div>
+    <div class="line blank"></div>
+    <div class="line"><span class="cm">-- Normal ticks --</span></div>
+    <div class="line">slamResult = SLAM.<span class="fn">processSensorData</span>(odometry, lidar)</div>
+    <div class="line">pose = slamResult.pose</div>
+    <div class="line blank"></div>
+    <div class="line"><span class="cm">-- Track trail (breadcrumb positions for visualization) --</span></div>
+    <div class="line"><span class="cond">if</span> moved &gt; <span class="lit">0.3m</span> since last trail point:</div>
+    <div class="line indent-1">append pose to trail (max <span class="lit">150</span> points)</div>
+    <div class="line blank"></div>
+    <div class="line"><span class="cond">if</span> phase is <span class="ph">TRAVELING</span>:</div>
+    <div class="line indent-1">accumulate distance from last pose</div>
+    <div class="line indent-1"><span class="cond">every</span> <span class="lit">20</span> ticks: run loop closure check, apply small correction if found</div>
+    <div class="line indent-1"><span class="cond">every</span> <span class="lit">0.3m</span>: collect corridor scan sample (for retroactive junction detection)</div>
+    <div class="line blank"></div>
+    <div class="line"><span class="kw">switch</span> on phase:</div>
+    <div class="line indent-1"><span class="ph">ARRIVING</span>  &rarr; <span class="fn-ref" data-target="fn-doArriving">doArriving</span>(lidar, pose)</div>
+    <div class="line indent-1"><span class="ph">SCANNING</span>  &rarr; <span class="fn-ref" data-target="fn-doScanning">doScanning</span>(lidar, pose)</div>
+    <div class="line indent-1"><span class="ph">CHOOSING</span>  &rarr; <span class="fn-ref" data-target="fn-doChoosing">doChoosing</span>(lidar, pose)</div>
+    <div class="line indent-1"><span class="ph">TRAVELING</span> &rarr; <span class="fn-ref" data-target="fn-doTraveling">doTraveling</span>(lidar, pose)</div>
+    <div class="line blank"></div>
+    <div class="line"><span class="kw">return</span> motor command</div>
+  </div>
+</div>
+
+<!-- ── doArriving ──────────────────────────────────────────────── -->
+
+<div class="section" id="fn-doArriving">
+  <div class="section-header" onclick="toggle(this)">
+    <div class="toggle">+</div>
+    <div class="section-title">
+      <span class="section-label">Step 1</span>
+      <span class="func-name">doArriving</span><span class="func-sig">(scan, pose) &rarr; MotorCommand</span>
+      <span class="section-desc">Arrive at target node, initialize SLAM data, correct drift</span>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="line"><span class="cm">-- If this is the very first node, create it --</span></div>
+    <div class="line"><span class="cond">if</span> no currentNode:</div>
+    <div class="line indent-1">create starting feature at robot position</div>
+    <div class="line indent-1">try <span class="fn-ref" data-target="fn-createNode">createNode</span>(feature, scan) <span class="cm">-- runs +/-20 deg clearance adjustment</span></div>
+    <div class="line indent-1"><span class="cond">if</span> rejected (tight start spot):</div>
+    <div class="line indent-2">fallback: <span class="fn">createNodeAtPosition</span>(pose, Junction) <span class="cm">-- no clearance check</span></div>
+    <div class="line indent-1">set currentNode to the new node</div>
+    <div class="line indent-1">create initial SLAM node map</div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="cm">-- Mark node as explored --</span></div>
+    <div class="line">isFirstExploration = node was not previously explored</div>
+    <div class="line"><span class="fn">markNodeExplored</span>(currentNode, robotId, timestamp)</div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="cm">-- Snap node to robot's actual position (first visit only) --</span></div>
+    <div class="line"><span class="cond">if</span> isFirstExploration:</div>
+    <div class="line indent-1">node.position = robot's actual pose</div>
+    <div class="line indent-1"><span class="cm">-- Push away from walls in cardinal directions --</span></div>
+    <div class="line indent-1"><span class="kw">for each</span> cardinal direction (N, S, E, W):</div>
+    <div class="line indent-2">find nearest wall via LiDAR in that direction</div>
+    <div class="line indent-2"><span class="cond">if</span> wall &lt; <span class="lit">0.3m</span> away:</div>
+    <div class="line indent-3">push node <span class="lit">80%</span> of the gap away from wall</div>
+    <div class="line indent-1">apply push only if destination cell is free in SLAM grid</div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="cm">-- Drift correction: compare fresh SLAM grid against stored node map --</span></div>
+    <div class="line"><span class="cond">if</span> node has been visited before (stored map exists):</div>
+    <div class="line indent-1">correction = <span class="fn">computeMapCorrelation</span>(current SLAM grid, stored node map)</div>
+    <div class="line indent-1"><span class="cond">if</span> correction confidence &gt; <span class="lit">0.2</span> and shift &gt; <span class="lit">0.05m</span>:</div>
+    <div class="line indent-2">adjust node position by correction offset</div>
+    <div class="line indent-2"><span class="cm">-- Propagate drift correction to connected unexplored nodes --</span></div>
+    <div class="line indent-2"><span class="kw">for each</span> unexplored neighbor (BFS, decay by distance):</div>
+    <div class="line indent-3">shift neighbor position proportionally</div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="cm">-- Capture SLAM data --</span></div>
+    <div class="line"><span class="cond">if</span> node map exists: update it with current SLAM grid</div>
+    <div class="line"><span class="cond">else</span>: create new node map from current SLAM data</div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="cm">-- Pose refinement via correlative scan matching --</span></div>
+    <div class="line"><span class="cond">if</span> tickCount &gt; <span class="lit">50</span> and exploredNodes &gt; <span class="lit">2</span>:</div>
+    <div class="line indent-1">SLAM.<span class="fn">refinePoseAtNode</span>(scan)</div>
+    <div class="annotation">
+      <span class="label">Design note</span>
+      Scan matching is DISABLED during travel. It only runs here, at node arrivals, to avoid compounding drift corrections while the robot is moving between nodes.
+    </div>
+    <div class="line blank"></div>
+
+    <div class="line">scanTicksRemaining = <span class="lit">5</span></div>
+    <div class="line">transition to <span class="ph">SCANNING</span></div>
+    <div class="line"><span class="kw">return</span> stop()</div>
+  </div>
+</div>
+
+<!-- ── doScanning ──────────────────────────────────────────────── -->
+
+<div class="section" id="fn-doScanning">
+  <div class="section-header" onclick="toggle(this)">
+    <div class="toggle">+</div>
+    <div class="section-title">
+      <span class="section-label">Step 2</span>
+      <span class="func-name">doScanning</span><span class="func-sig">(scan, pose) &rarr; MotorCommand</span>
+      <span class="section-desc">360-degree scan, feature detection, node/edge creation</span>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="line"><span class="cm">-- Wait 5 ticks for SLAM grid to accumulate data --</span></div>
+    <div class="line">scanTicksRemaining--</div>
+    <div class="line"><span class="cond">if</span> scanTicksRemaining &gt; 0: <span class="kw">return</span> stop()</div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="cm">-- Run full 360-degree feature detection --</span></div>
+    <div class="line">features = <span class="fn-ref" data-target="fn-detectFromScan">featureDetector.detectFromScan</span>(scan, pose)</div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="kw">for each</span> detected feature:</div>
+    <div class="line indent-1"><span class="cond">skip if</span> distance &lt; <span class="lit">0.5m</span> <span class="cm">-- too close to robot</span></div>
+    <div class="line indent-1"><span class="cond">skip if</span> distance &gt; <span class="lit">85%</span> of scan range <span class="cm">-- too far, unreliable</span></div>
+    <div class="line indent-1"><span class="cond">skip if</span> position is occupied in SLAM grid</div>
+    <div class="line indent-1"><span class="cond">skip if</span> no line of sight (<span class="fn-ref" data-target="fn-checkLineOfSight">checkLineOfSight</span> returns clear=false)</div>
+    <div class="line blank"></div>
+    <div class="line indent-1"><span class="cm">-- Check for nearby existing node --</span></div>
+    <div class="line indent-1">nearest = graph.findNearestNode(feature.position)</div>
+    <div class="line indent-1"><span class="cond">if</span> nearest exists within minNodeSeparation:</div>
+    <div class="line indent-2"><span class="cm">-- Connect to existing node instead of creating a new one --</span></div>
+    <div class="line indent-2"><span class="cond">if</span> no edge exists between currentNode and nearest:</div>
+    <div class="line indent-3">create edge to nearest node</div>
+    <div class="line indent-2">strengthen nearest node's confidence</div>
+    <div class="line indent-2"><span class="kw">continue</span></div>
+    <div class="line blank"></div>
+    <div class="line indent-1"><span class="cm">-- Create new node + edge atomically --</span></div>
+    <div class="line indent-1">newNode = <span class="fn-ref" data-target="fn-createNode">createNode</span>(feature, scan)</div>
+    <div class="line indent-1"><span class="cond">if</span> node created:</div>
+    <div class="line indent-2">edge = graph.createEdge(currentNode, newNode, distance, bearing)</div>
+    <div class="line indent-2"><span class="cond">if</span> edge creation fails:</div>
+    <div class="line indent-3"><span class="warn">remove the node</span> <span class="cm">-- atomic: no orphan nodes</span></div>
+
+    <div class="annotation rule-box">
+      <span class="label">Invariant: Atomic Node+Edge Creation</span>
+      Nodes are never created without a connecting edge. If edge creation fails after node creation, the node is immediately removed. This prevents orphan nodes that would confuse exploration.
+    </div>
+
+    <div class="line blank"></div>
+    <div class="line"><span class="cm">-- Update exit count on current node --</span></div>
+    <div class="line">currentNode.exit_count = max(edge_count, distant_feature_count)</div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="cm">-- Step 3: Connect to visible existing nodes --</span></div>
+    <div class="line"><span class="kw">call</span> <span class="fn-ref" data-target="fn-identifyVisibleEdges">identifyVisibleEdges</span>(scan, pose)</div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="cm">-- Detect side passages (perpendicular openings in corridors) --</span></div>
+    <div class="line"><span class="kw">call</span> <span class="fn-ref" data-target="fn-detectSidePassages">detectSidePassages</span>(scan, pose)</div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="cm">-- Revalidate existing edges --</span></div>
+    <div class="line"><span class="kw">for each</span> node in scan radius:</div>
+    <div class="line indent-1"><span class="cond">if</span> direct LOS exists: add to visibleSet</div>
+    <div class="line"><span class="kw">call</span> <span class="fn-ref" data-target="fn-revalidateEdgesFromNode">graph.revalidateEdgesFromNode</span>(currentNode, visibleSet, timestamp)</div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="cm">-- Periodic maintenance (every 100 ticks) --</span></div>
+    <div class="line"><span class="cond">if</span> tickCount % <span class="lit">100</span> == 0:</div>
+    <div class="line indent-1">graph.applyFreshnessDecay(timestamp)</div>
+    <div class="line indent-1"><span class="fn-ref" data-target="fn-pruneDeadEntities">graph.pruneDeadEntities</span>()</div>
+    <div class="line blank"></div>
+
+    <div class="line">run validation pipeline (consistency engine)</div>
+    <div class="line">attempt merge alignment with other robots (every 50 ticks)</div>
+    <div class="line blank"></div>
+    <div class="line">transition to <span class="ph">CHOOSING</span></div>
+    <div class="line"><span class="kw">return</span> stop()</div>
+  </div>
+</div>
+
+<!-- ── identifyVisibleEdges ────────────────────────────────────── -->
+
+<div class="section" id="fn-identifyVisibleEdges">
+  <div class="section-header" onclick="toggle(this)">
+    <div class="toggle">+</div>
+    <div class="section-title">
+      <span class="section-label">Step 2b</span>
+      <span class="func-name">identifyVisibleEdges</span><span class="func-sig">(scan, pose)</span>
+      <span class="section-desc">Connect to visible existing nodes via direct LOS</span>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="line">nodesInRange = all nodes within scan radius, sorted by distance</div>
+    <div class="line blank"></div>
+    <div class="line"><span class="kw">for each</span> candidate node (nearest first):</div>
+    <div class="line indent-1"><span class="cond">skip if</span> already connected to currentNode</div>
+    <div class="line indent-1"><span class="cond">skip if</span> distance &lt; <span class="lit">1.0m</span> <span class="cm">-- too close</span></div>
+    <div class="line indent-1"><span class="cond">skip if</span> angularly occluded <span class="cm">-- within 15 deg of an already-connected node</span></div>
+    <div class="line blank"></div>
+
+    <div class="line indent-1"><span class="cm">-- Use DIRECT ray only -- no +/-20 deg search --</span></div>
+    <div class="line indent-1"><span class="cond">if</span> <span class="fn-ref" data-target="fn-hasDirectLineOfSight">hasDirectLineOfSight</span>(scan, pose, node.position, distance):</div>
+    <div class="line indent-2">create edge(currentNode, candidate, distance, bearing)</div>
+    <div class="line indent-2">edgesCreated++</div>
+    <div class="line indent-2">record angle (for occlusion filter)</div>
+    <div class="line blank"></div>
+    <div class="line indent-1"><span class="cond">stop after</span> <span class="lit">6</span> edges created</div>
+
+    <div class="annotation warn-box">
+      <span class="label">Critical Distinction: Edge LOS vs Node Placement LOS</span>
+      Edge creation uses <strong>hasDirectLineOfSight</strong> (single ray, no angular search). An edge is a straight line from A to B &mdash; if the direct ray can't see B, the straight-line edge would go through a wall.<br><br>
+      Node placement uses <strong>checkLineOfSight</strong> (+/-20 deg search) to find the best wall clearance angle. This distinction was the source of many bugs during development.
+    </div>
+  </div>
+</div>
+
+<!-- ── doChoosing ──────────────────────────────────────────────── -->
+
+<div class="section" id="fn-doChoosing">
+  <div class="section-header" onclick="toggle(this)">
+    <div class="toggle">+</div>
+    <div class="section-title">
+      <span class="section-label">Step 3</span>
+      <span class="func-name">doChoosing</span><span class="func-sig">(scan, pose) &rarr; MotorCommand</span>
+      <span class="section-desc">Pick next edge to travel using exploration priority</span>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="line"><span class="cm">-- Exploration priority (highest to lowest) --</span></div>
+
+    <div class="priority-list">
+      <div class="priority-item">
+        <div class="priority-badge p0">0</div>
+        <div><span class="acc">Manual path queue</span> &mdash; if user clicked a target, consume next hop. Recompute via BFS if edge is blocked.</div>
+      </div>
+      <div class="priority-item">
+        <div class="priority-badge p1">1</div>
+        <div><span class="acc">BFS path to any unexplored node</span> &mdash; find first edge on shortest path toward the nearest unexplored node in the entire graph.</div>
+      </div>
+      <div class="priority-item">
+        <div class="priority-badge p2">2</div>
+        <div><span class="acc">Nearest untraveled edge</span> &mdash; edges that have been created (visibility confirmed) but never physically traversed.</div>
+      </div>
+      <div class="priority-item">
+        <div class="priority-badge p3">3</div>
+        <div><span class="acc">Adjacent node with most unmapped edges</span> &mdash; prefer neighbors that have the most outgoing untraveled edges.</div>
+      </div>
+      <div class="priority-item">
+        <div class="priority-badge p4">4</div>
+        <div><span class="acc">Random edge</span> &mdash; last resort among graph edges.</div>
+      </div>
+      <div class="priority-item">
+        <div class="priority-badge fb">F</div>
+        <div><span class="acc">Grid frontier detection</span> &mdash; if no unexplored graph nodes remain, scan the SLAM occupancy grid for free cells adjacent to unknown cells. Serves as a fallback when the topological graph has been fully explored but territory remains unmapped.</div>
+      </div>
+    </div>
+
+    <div class="line blank"></div>
+    <div class="line"><span class="cond">if</span> no edges and no frontiers found:</div>
+    <div class="line indent-1">set scanTicksRemaining = <span class="lit">20</span> <span class="cm">-- retry after waiting</span></div>
+    <div class="line indent-1">transition to <span class="ph">SCANNING</span></div>
+    <div class="line blank"></div>
+    <div class="line"><span class="cond">otherwise</span>:</div>
+    <div class="line indent-1">set targetNode, targetPosition, activeEdge</div>
+    <div class="line indent-1">beginTravel(pose, timestamp)</div>
+    <div class="line indent-1">transition to <span class="ph">TRAVELING</span></div>
+    <div class="line"><span class="kw">return</span> stop() <span class="cm">-- actual driving starts next tick</span></div>
+  </div>
+</div>
+
+<!-- ── doTraveling ─────────────────────────────────────────────── -->
+
+<div class="section" id="fn-doTraveling">
+  <div class="section-header" onclick="toggle(this)">
+    <div class="toggle">+</div>
+    <div class="section-title">
+      <span class="section-label">Step 4</span>
+      <span class="func-name">doTraveling</span><span class="func-sig">(scan, pose) &rarr; MotorCommand</span>
+      <span class="section-desc">Drive to destination, detect stuck and wall-stop conditions</span>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="line"><span class="cond">if</span> no target position: transition to <span class="ph">ARRIVING</span></div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="cm">-- Check wall-stop condition --</span></div>
+    <div class="line"><span class="cond">if</span> <span class="fn-ref" data-target="fn-checkWallStop">checkWallStop</span>(scan, pose, target) triggers:</div>
+    <div class="line indent-1"><span class="kw">return</span> stop() <span class="cm">-- wall-stop creates a dead-end node and transitions to ARRIVING</span></div>
+    <div class="line blank"></div>
+
+    <div class="line">distToTarget = distance(pose, targetPosition)</div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="cm">-- Arrival check --</span></div>
+    <div class="line"><span class="cond">if</span> distToTarget &lt; <span class="lit">0.5m</span>:</div>
+    <div class="line indent-1"><span class="fn-ref" data-target="fn-completeTravel">completeTravel</span>(scan, pose)</div>
+    <div class="line indent-1"><span class="fn-ref" data-target="fn-analyzeCorridorOnArrival">analyzeCorridorOnArrival</span>(timestamp)</div>
+    <div class="line indent-1">transition to <span class="ph">ARRIVING</span></div>
+    <div class="line indent-1"><span class="kw">return</span> stop()</div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="cm">-- Stuck check (2x normal threshold) --</span></div>
+    <div class="line"><span class="cond">if</span> ticks in travel &gt; <span class="lit">2x</span> stuckThreshold (<span class="lit">120</span> ticks):</div>
+    <div class="line indent-1"><span class="kw">call</span> handleStuck(scan, pose) <span class="cm">-- creates node, transitions to ARRIVING</span></div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="cm">-- Normal driving --</span></div>
+    <div class="line"><span class="kw">return</span> <span class="fn-ref" data-target="fn-driveToward">motor.driveToward</span>(targetPosition, pose, scan, timestamp)</div>
+  </div>
+</div>
+
+<!-- ── createNode ──────────────────────────────────────────────── -->
+
+<div class="section" id="fn-createNode">
+  <div class="section-header" onclick="toggle(this)">
+    <div class="toggle">+</div>
+    <div class="section-title">
+      <span class="func-name">createNode</span><span class="func-sig">(feature, scan) &rarr; NetworkNode | null</span>
+      <span class="section-desc">Create a node with clearance adjustment and ring wall check</span>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="line"><span class="cm">-- Pre-check: reject if target position is inside a wall --</span></div>
+    <div class="line"><span class="cond">if</span> SLAM.isPositionOccupied(feature.position): <span class="kw">return</span> null</div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="cm">-- +/-10 deg clearance adjustment --</span></div>
+    <div class="line"><span class="cond">if</span> last scan available and distance &gt; <span class="lit">0.5m</span>:</div>
+    <div class="line indent-1">los = <span class="fn-ref" data-target="fn-checkLineOfSight">checkLineOfSight</span>(lastScan, pose, feature.position)</div>
+    <div class="line indent-1"><span class="cond">if</span> clear and bestAngle differs from direct angle:</div>
+    <div class="line indent-2"><span class="cm">-- Shift node position toward the angle with best wall clearance --</span></div>
+    <div class="line indent-2">lateralShift = distance * sin(angleDifference)</div>
+    <div class="line indent-2"><span class="cond">cap</span> lateral shift to <span class="lit">0.5m</span> maximum</div>
+    <div class="line indent-2">recalculate feature.position using adjusted angle</div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="cm">-- Ring wall check: 8 points at 0.35m radius --</span></div>
+    <div class="line"><span class="kw">for</span> i in <span class="lit">0..7</span>:</div>
+    <div class="line indent-1">angle = i * <span class="lit">45 deg</span></div>
+    <div class="line indent-1">checkPoint = feature.position + <span class="lit">0.35m</span> in that direction</div>
+    <div class="line indent-1"><span class="cond">if</span> SLAM.isPositionOccupied(checkPoint): <span class="kw">return</span> null</div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="cm">-- All checks passed: create the node --</span></div>
+    <div class="line">node = graph.createNode(feature, timestamp)</div>
+    <div class="line">featureDetector.registerKnownFeature(feature.position)</div>
+    <div class="line">publish node to network</div>
+    <div class="line"><span class="kw">return</span> node</div>
+
+    <div class="annotation">
+      <span class="label">Note</span>
+      No SLAM node map is created here. The robot has not physically visited this position. SLAM data is only captured when the robot arrives at a node (in doArriving).
+    </div>
+  </div>
+</div>
+
+<!-- ── checkLineOfSight ────────────────────────────────────────── -->
+
+<div class="section" id="fn-checkLineOfSight">
+  <div class="section-header" onclick="toggle(this)">
+    <div class="toggle">+</div>
+    <div class="section-title">
+      <span class="func-name">checkLineOfSight</span><span class="func-sig">(scan, pose, toX, toY) &rarr; { clear, bestAngle }</span>
+      <span class="section-desc">+/-20 deg search for NODE PLACEMENT only &mdash; finds best wall clearance angle</span>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="annotation warn-box">
+      <span class="label">Used for NODE PLACEMENT only</span>
+      This function searches a +/-20 deg window to find the angle that maximizes clearance from walls on both sides. It is NOT used for edge creation. Edges use <span class="fn-ref" data-target="fn-hasDirectLineOfSight">hasDirectLineOfSight</span> (direct ray, no search).
+    </div>
+
+    <div class="line">angleToTarget = atan2(dy, dx) - pose.theta</div>
+    <div class="line">searchHalf = <span class="lit">+/-20 deg</span></div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="cm">-- Collect all ray indices within the +/-20 deg window --</span></div>
+    <div class="line">windowIndices = rays where abs(angle - angleToTarget) &le; searchHalf</div>
+    <div class="line"><span class="cond">if</span> none found: <span class="kw">return</span> { clear: false }</div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="cm">-- Score each ray that reaches the target distance --</span></div>
+    <div class="line"><span class="kw">for each</span> ray in window:</div>
+    <div class="line indent-1"><span class="cond">skip if</span> ray range &lt; target distance <span class="cm">-- hits a wall before target</span></div>
+    <div class="line blank"></div>
+    <div class="line indent-1"><span class="cm">-- Measure wall clearance on both sides --</span></div>
+    <div class="line indent-1">leftWallDist = count clear rays scanning leftward from this ray</div>
+    <div class="line indent-2"><span class="cm">-- Rays outside window = wall (distance 0)</span></div>
+    <div class="line indent-2"><span class="cm">-- Rays with range &lt; 50% of target distance = wall</span></div>
+    <div class="line indent-1">rightWallDist = same, scanning rightward</div>
+    <div class="line blank"></div>
+    <div class="line indent-1">score = min(leftWallDist, rightWallDist)</div>
+    <div class="line indent-1"><span class="cm">-- Maximize the tightest side (center of corridor)</span></div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="kw">return</span> { clear: bestScore &ge; 0, bestAngle: ray angle + pose.theta }</div>
+  </div>
+</div>
+
+<!-- ── hasDirectLineOfSight ────────────────────────────────────── -->
+
+<div class="section" id="fn-hasDirectLineOfSight">
+  <div class="section-header" onclick="toggle(this)">
+    <div class="toggle">+</div>
+    <div class="section-title">
+      <span class="func-name">hasDirectLineOfSight</span><span class="func-sig">(scan, pose, toX, toY, dist) &rarr; boolean</span>
+      <span class="section-desc">Single direct ray for EDGE CREATION &mdash; no angular search</span>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="annotation warn-box">
+      <span class="label">Used for EDGE CREATION only</span>
+      No +/-20 deg search. The edge is a straight line &mdash; if the direct ray cannot see the target, the straight-line edge would pass through a wall.
+    </div>
+
+    <div class="line"><span class="cond">if</span> distance &lt; <span class="lit">0.1m</span>: <span class="kw">return</span> true</div>
+    <div class="line"><span class="cond">if</span> distance &gt; scan.max_range: <span class="kw">return</span> false</div>
+    <div class="line blank"></div>
+
+    <div class="line">angleToTarget = atan2(dy, dx) - pose.theta</div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="cm">-- Find the single closest ray to the target angle --</span></div>
+    <div class="line">bestIdx = ray with smallest angular difference to angleToTarget</div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="kw">return</span> scan.ranges[bestIdx] &ge; target distance</div>
+  </div>
+</div>
+
+<!-- ── detectSidePassages ──────────────────────────────────────── -->
+
+<div class="section" id="fn-detectSidePassages">
+  <div class="section-header" onclick="toggle(this)">
+    <div class="toggle">+</div>
+    <div class="section-title">
+      <span class="func-name">detectSidePassages</span><span class="func-sig">(scan, pose)</span>
+      <span class="section-desc">Find perpendicular openings (wall-to-free transitions) in corridors</span>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="line"><span class="cm">-- Only check every 0.5m of travel --</span></div>
+    <div class="line"><span class="cond">if</span> moved &lt; <span class="lit">0.5m</span> since last check: <span class="kw">return</span></div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="cm">-- Check corridor is wide enough for a junction node --</span></div>
+    <div class="line">corridorWidth = leftWall + rightWall <span class="cm">(from LiDAR perpendicular rays)</span></div>
+    <div class="line"><span class="cond">if</span> corridorWidth &lt; <span class="lit">1.0m</span>: <span class="kw">return</span> <span class="cm">-- too narrow</span></div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="kw">for each</span> ray pair in scan:</div>
+    <div class="line indent-1"><span class="cm">-- Detect short-to-long transition (wall-to-opening) --</span></div>
+    <div class="line indent-1"><span class="cond">if</span> nextRange - thisRange &gt; <span class="lit">1.5m</span> (jump threshold):</div>
+    <div class="line indent-2"><span class="cond">skip if</span> wall distance &lt; <span class="lit">0.3m</span> or &gt; <span class="lit">80%</span> of scan range</div>
+    <div class="line indent-2"><span class="cond">skip if</span> not perpendicular to heading <span class="cm">(must be pi/4 to 3pi/4)</span></div>
+    <div class="line indent-2"><span class="cond">skip if</span> opening range &lt; <span class="lit">2.0m</span></div>
+    <div class="line blank"></div>
+
+    <div class="line indent-2"><span class="cm">-- Case 1: Existing node visible through opening --</span></div>
+    <div class="line indent-2"><span class="cond">if</span> a node is visible within <span class="lit">0.3 rad</span> of opening angle:</div>
+    <div class="line indent-3">create edge from anchor to existing node (if not already connected)</div>
+    <div class="line blank"></div>
+
+    <div class="line indent-2"><span class="cm">-- Case 2: No node visible -- create junction + target --</span></div>
+    <div class="line indent-2"><span class="cond">else</span>:</div>
+    <div class="line indent-3">junction = create node at robot position (on the corridor path)</div>
+    <div class="line indent-3"><span class="cm">-- Junction must have edge to anchor node (atomic) --</span></div>
+    <div class="line indent-3"><span class="cond">if</span> junction edge fails: remove junction</div>
+    <div class="line blank"></div>
+    <div class="line indent-3">target = create node at <span class="lit">75%</span> of visible range into opening</div>
+    <div class="line indent-3"><span class="cm">-- Target must have edge to junction (atomic) --</span></div>
+    <div class="line indent-3"><span class="cond">if</span> target edge fails: remove target</div>
+    <div class="line blank"></div>
+    <div class="line indent-1">skip ahead <span class="lit">10</span> rays <span class="cm">-- avoid double-detecting same opening</span></div>
+  </div>
+</div>
+
+<!-- ── analyzeCorridorOnArrival ─────────────────────────────────── -->
+
+<div class="section" id="fn-analyzeCorridorOnArrival">
+  <div class="section-header" onclick="toggle(this)">
+    <div class="toggle">+</div>
+    <div class="section-title">
+      <span class="func-name">analyzeCorridorOnArrival</span><span class="func-sig">(timestamp)</span>
+      <span class="section-desc">Retroactive junction detection from corridor scan log</span>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="line"><span class="cm">-- After travel completes, analyze the corridor scan samples --</span></div>
+    <div class="line"><span class="cm">-- collected every 0.3m during TRAVELING phase --</span></div>
+    <div class="line blank"></div>
+
+    <div class="line">departureNode = nearest node to first sample (node A)</div>
+    <div class="line">arrivalNode = currentNode (node B, set by completeTravel)</div>
+    <div class="line">travelAngle = atan2(B.y - A.y, B.x - A.x)</div>
+    <div class="line">perpLeft = travelAngle + <span class="lit">90 deg</span></div>
+    <div class="line">perpRight = travelAngle - <span class="lit">90 deg</span></div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="cm">-- Compute perpendicular ranges for each sample --</span></div>
+    <div class="line"><span class="kw">for each</span> corridor sample:</div>
+    <div class="line indent-1">leftRange = nearest ray within <span class="lit">15 deg</span> cone of perpLeft</div>
+    <div class="line indent-1">rightRange = nearest ray within <span class="lit">15 deg</span> cone of perpRight</div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="cm">-- Detect jumps between consecutive samples --</span></div>
+    <div class="line"><span class="kw">for each</span> consecutive pair (prev, curr):</div>
+    <div class="line indent-1"><span class="cond">if</span> curr.leftRange - prev.leftRange &gt; <span class="lit">1.5m</span>:</div>
+    <div class="line indent-2"><span class="cond">and</span> next sample also confirms the opening (width &gt; <span class="lit">0.5m</span>):</div>
+    <div class="line indent-3">record left passage at curr.pose</div>
+    <div class="line indent-1"><span class="cm">-- Same check for right side --</span></div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="cm">-- Deduplicate passages within 1.0m of each other --</span></div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="kw">for each</span> detected passage:</div>
+    <div class="line indent-1"><span class="cm">-- Project passage position onto the A-to-B line --</span></div>
+    <div class="line indent-1">t = clamp(dot product projection, <span class="lit">0.05</span>, <span class="lit">0.95</span>)</div>
+    <div class="line indent-1">junctionPos = A + t * (B - A)</div>
+    <div class="line blank"></div>
+    <div class="line indent-1"><span class="cond">if</span> near existing node: use it as junction, just create branch edge</div>
+    <div class="line indent-1"><span class="cond">else</span>: create junction node on A-B line</div>
+    <div class="line blank"></div>
+    <div class="line indent-1"><span class="cm">-- Create target node into the passage at 75% of visible range --</span></div>
+    <div class="line indent-1">targetPos = junctionPos + <span class="lit">75%</span> * range * direction</div>
+    <div class="line indent-1"><span class="cond">if</span> no existing node near target and position is free:</div>
+    <div class="line indent-2">create target node + edge to junction (atomic)</div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="cm">-- Split the original A-to-B edge into a chain --</span></div>
+    <div class="line"><span class="cond">if</span> junctions were created and original traveled edge exists:</div>
+    <div class="line indent-1">sort junctions by distance from A</div>
+    <div class="line indent-1">remove original A-B edge</div>
+    <div class="line indent-1">build chain: A &rarr; J1 &rarr; J2 &rarr; ... &rarr; B</div>
+    <div class="line indent-1"><span class="kw">for each</span> link in chain:</div>
+    <div class="line indent-2">create traveled edge with measured distance</div>
+    <div class="line indent-1"><span class="cm">-- Clean up: remove orphaned junction nodes with no edges --</span></div>
+    <div class="line blank"></div>
+
+    <div class="line">clear corridorScanLog</div>
+  </div>
+</div>
+
+<!-- ── completeTravel ──────────────────────────────────────────── -->
+
+<div class="section" id="fn-completeTravel">
+  <div class="section-header" onclick="toggle(this)">
+    <div class="toggle">+</div>
+    <div class="section-title">
+      <span class="func-name">completeTravel</span><span class="func-sig">(scan, pose)</span>
+      <span class="section-desc">Finalize travel: mark edge traveled, update current node</span>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="line"><span class="cm">-- Mark the active edge as traveled with measured data --</span></div>
+    <div class="line"><span class="cond">if</span> no arrival node exists:</div>
+    <div class="line indent-1">create a new node at current position via <span class="fn-ref" data-target="fn-createNode">createNode</span></div>
+    <div class="line indent-1"><span class="cond">if</span> creation fails: cancel edge, <span class="kw">return</span></div>
+    <div class="line blank"></div>
+
+    <div class="line">complete edge map (corridor data) under graph edge ID</div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="cond">if</span> activeEdge exists:</div>
+    <div class="line indent-1">measuredBearing = atan2(pose.y - startPose.y, pose.x - startPose.x)</div>
+    <div class="line indent-1">graph.markEdgeTraveled(activeEdge, robotId, accumulatedDistance, measuredBearing)</div>
+    <div class="line"><span class="cond">else</span>:</div>
+    <div class="line indent-1">create a new traveled edge from departure to arrival</div>
+    <div class="line blank"></div>
+
+    <div class="line">currentNodeId = arrival node</div>
+    <div class="line">clear target, activeEdge</div>
+  </div>
+</div>
+
+<!-- ── checkWallStop ───────────────────────────────────────────── -->
+
+<div class="section" id="fn-checkWallStop">
+  <div class="section-header" onclick="toggle(this)">
+    <div class="toggle">+</div>
+    <div class="section-title">
+      <span class="func-name">checkWallStop</span><span class="func-sig">(scan, pose, target) &rarr; boolean</span>
+      <span class="section-desc">Detect when robot is stuck against a wall mid-travel</span>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="line"><span class="cond">if</span> ticks in travel &lt; <span class="lit">15</span>: <span class="kw">return</span> false <span class="cm">-- too early to judge</span></div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="cm">-- Check progress: has robot moved enough? --</span></div>
+    <div class="line">distFromStart = distance(pose, travelStartPose)</div>
+    <div class="line">expectedProgress = ticksInTravel * <span class="lit">0.03</span></div>
+    <div class="line"><span class="cond">if</span> distFromStart &gt; expectedProgress: <span class="kw">return</span> false <span class="cm">-- making progress</span></div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="cm">-- Check forward clearance --</span></div>
+    <div class="line">minForward = minimum range within <span class="lit">+/-30 deg</span> of heading</div>
+    <div class="line"><span class="cond">if</span> minForward &gt; <span class="lit">0.5m</span>: <span class="kw">return</span> false <span class="cm">-- path ahead is clear</span></div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="cm">-- Wall stop triggered --</span></div>
+    <div class="line">create dead-end node at current position via <span class="fn-ref" data-target="fn-createNode">createNode</span></div>
+    <div class="line"><span class="cond">if</span> clearance check rejects: fallback to createNodeAtPosition</div>
+    <div class="line">create traveled edge from departure node to wall-stop node</div>
+    <div class="line">set currentNode = wall-stop node</div>
+    <div class="line">transition to <span class="ph">ARRIVING</span></div>
+    <div class="line"><span class="kw">return</span> true</div>
+  </div>
+</div>
+
+<!-- ================================================================== -->
+<!-- MODULE: NETWORK GRAPH -->
+<!-- ================================================================== -->
+
+<div class="module-header">
+  <h2>Network Graph &mdash; Topological Map</h2>
+  <div class="module-file">src/robot/network/network-graph.ts</div>
+</div>
+
+<!-- ── chooseExplorationEdge ───────────────────────────────────── -->
+
+<div class="section" id="fn-chooseExplorationEdge">
+  <div class="section-header" onclick="toggle(this)">
+    <div class="toggle">+</div>
+    <div class="section-title">
+      <span class="func-name">chooseExplorationEdge</span><span class="func-sig">(nodeId) &rarr; { edge, reason } | null</span>
+      <span class="section-desc">4-tier exploration priority for choosing next edge</span>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="line">edges = all edges connected to nodeId</div>
+    <div class="line"><span class="cond">if</span> no edges: <span class="kw">return</span> null</div>
+    <div class="line blank"></div>
+
+    <div class="priority-list">
+      <div class="priority-item">
+        <div class="priority-badge p0">0</div>
+        <div><strong>BFS to unexplored</strong> &mdash; Find any unexplored node in the graph. BFS from current node, tracking parent edges. Return the first edge on the shortest path to the nearest unexplored node.</div>
+      </div>
+      <div class="priority-item">
+        <div class="priority-badge p1">1</div>
+        <div><strong>Untraveled edges</strong> &mdash; Filter for edges that have never been physically traversed. Pick the one with smallest distance.</div>
+      </div>
+      <div class="priority-item">
+        <div class="priority-badge p2">2</div>
+        <div><strong>Most unmapped neighbor</strong> &mdash; For each adjacent node, count its untraveled edges. Pick the neighbor with the highest count.</div>
+      </div>
+      <div class="priority-item">
+        <div class="priority-badge p3">3</div>
+        <div><strong>Random</strong> &mdash; Pick a random connected edge as last resort.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── findPath ────────────────────────────────────────────────── -->
+
+<div class="section" id="fn-findPath">
+  <div class="section-header" onclick="toggle(this)">
+    <div class="toggle">+</div>
+    <div class="section-title">
+      <span class="func-name">findPath</span><span class="func-sig">(fromId, toId) &rarr; [{ nodeId, edgeId }] | null</span>
+      <span class="section-desc">BFS shortest path, skips blocked edges</span>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="line"><span class="cm">-- Standard BFS shortest path by hop count --</span></div>
+    <div class="line">queue = [fromId]</div>
+    <div class="line">visited = { fromId }</div>
+    <div class="line">parent = {} <span class="cm">-- maps nodeId to { fromNodeId, edgeId }</span></div>
+    <div class="line blank"></div>
+    <div class="line"><span class="kw">while</span> queue not empty:</div>
+    <div class="line indent-1">current = dequeue</div>
+    <div class="line indent-1"><span class="kw">for each</span> edge from current:</div>
+    <div class="line indent-2"><span class="cond">skip if</span> edge status is <span class="warn">Blocked</span></div>
+    <div class="line indent-2">neighbor = other end of edge</div>
+    <div class="line indent-2"><span class="cond">skip if</span> already visited</div>
+    <div class="line indent-2">record parent[neighbor] = { current, edge.id }</div>
+    <div class="line indent-2"><span class="cond">if</span> neighbor == toId: reconstruct path, <span class="kw">return</span></div>
+    <div class="line indent-2">enqueue neighbor</div>
+    <div class="line blank"></div>
+    <div class="line"><span class="kw">return</span> null <span class="cm">-- no path found</span></div>
+  </div>
+</div>
+
+<!-- ── revalidateEdgesFromNode ─────────────────────────────────── -->
+
+<div class="section" id="fn-revalidateEdgesFromNode">
+  <div class="section-header" onclick="toggle(this)">
+    <div class="toggle">+</div>
+    <div class="section-title">
+      <span class="func-name">revalidateEdgesFromNode</span><span class="func-sig">(nodeId, visibleNodeIds, timestamp)</span>
+      <span class="section-desc">Edge health check based on current LiDAR visibility</span>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="line"><span class="kw">for each</span> edge connected to nodeId:</div>
+    <div class="line indent-1">otherNode = the node at the other end</div>
+    <div class="line blank"></div>
+
+    <div class="line indent-1"><span class="cond">if</span> otherNode is <span class="cond">visible</span> (in visibleNodeIds):</div>
+    <div class="line indent-2">refresh edge timestamp</div>
+    <div class="line indent-2">increase confidence by <span class="lit">+0.05</span></div>
+    <div class="line indent-2"><span class="cond">if</span> was Blocked: change status to Open</div>
+    <div class="line blank"></div>
+
+    <div class="line indent-1"><span class="cond">else if</span> edge was traveled or Open <span class="cond">(now invisible)</span>:</div>
+    <div class="line indent-2"><span class="cm">-- Previously confirmed path is now blocked --</span></div>
+    <div class="line indent-2">mark status = <span class="warn">Blocked</span></div>
+    <div class="line indent-2">reduce confidence by <span class="lit">30%</span> (floor at <span class="lit">0.15</span>)</div>
+    <div class="line indent-2"><span class="cm">-- Edge is KEPT, not deleted --</span></div>
+    <div class="line blank"></div>
+
+    <div class="line indent-1"><span class="cond">else</span> (untraveled, invisible):</div>
+    <div class="line indent-2"><span class="cm">-- Speculative edge no longer visible --</span></div>
+    <div class="line indent-2">reduce confidence by <span class="lit">50%</span></div>
+  </div>
+</div>
+
+<!-- ── pruneDeadEntities ───────────────────────────────────────── -->
+
+<div class="section" id="fn-pruneDeadEntities">
+  <div class="section-header" onclick="toggle(this)">
+    <div class="toggle">+</div>
+    <div class="section-title">
+      <span class="func-name">pruneDeadEntities</span><span class="func-sig">() &rarr; { prunedNodeIds, prunedEdgeIds, disconnections }</span>
+      <span class="section-desc">Remove dead-tier entities while protecting confirmed topology</span>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="annotation warn-box">
+      <span class="label">Pruning Rules &mdash; NEVER Violated</span>
+      <strong>NEVER prune traveled edges</strong> &mdash; they represent real paths the robot has walked. Mark as Blocked instead.<br>
+      <strong>NEVER prune blocked edges</strong> &mdash; they are information about the topology (a connection that may reopen).<br>
+      <strong>NEVER prune explored nodes</strong> &mdash; they represent real places the robot has been.
+    </div>
+
+    <div class="line"><span class="cm">-- Step 1: Process dead-tier edges --</span></div>
+    <div class="line"><span class="kw">for each</span> edge where tier == Dead:</div>
+    <div class="line indent-1"><span class="cond">if</span> edge.traveled:</div>
+    <div class="line indent-2"><span class="warn">DO NOT prune</span> &mdash; set status = Blocked, confidence = <span class="lit">0.10</span>, tier = Candidate</div>
+    <div class="line indent-1"><span class="cond">if</span> edge.status == Blocked:</div>
+    <div class="line indent-2"><span class="warn">DO NOT prune</span> &mdash; set confidence = <span class="lit">0.10</span>, tier = Candidate</div>
+    <div class="line indent-1"><span class="cond">otherwise</span> (untraveled, not blocked):</div>
+    <div class="line indent-2">remove edge from graph <span class="cm">-- speculative connection that decayed</span></div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="cm">-- Step 2: Find orphaned dead-tier nodes --</span></div>
+    <div class="line"><span class="kw">for each</span> node where tier == Dead:</div>
+    <div class="line indent-1"><span class="cond">if</span> node.explored: <span class="warn">DO NOT prune</span></div>
+    <div class="line indent-1"><span class="cond">if</span> node has no remaining edges:</div>
+    <div class="line indent-2">remove node from graph</div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="cm">-- Step 3: Check for graph disconnection --</span></div>
+    <div class="line"><span class="cond">if</span> edges were pruned: run connected components check</div>
+    <div class="line"><span class="cond">if</span> graph split: flag as disconnection event (do not auto-fix)</div>
+  </div>
+</div>
+
+<!-- ================================================================== -->
+<!-- MODULE: FEATURE DETECTOR -->
+<!-- ================================================================== -->
+
+<div class="module-header">
+  <h2>Feature Detector &mdash; LiDAR Scan Analysis</h2>
+  <div class="module-file">src/robot/feature-detection/feature-detector.ts</div>
+</div>
+
+<!-- ── detectFromScan ──────────────────────────────────────────── -->
+
+<div class="section" id="fn-detectFromScan">
+  <div class="section-header" onclick="toggle(this)">
+    <div class="toggle">+</div>
+    <div class="section-title">
+      <span class="func-name">detectFromScan</span><span class="func-sig">(scan, pose) &rarr; DetectedFeature[]</span>
+      <span class="section-desc">Full 360-degree LiDAR analysis, returns navigable positions</span>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="line"><span class="cm">-- Step 1: Classify the robot's current local position --</span></div>
+    <div class="line">openDirections = <span class="fn-ref" data-target="fn-findOpenDirections">findOpenDirections</span>(scan)</div>
+    <div class="line"><span class="cond">if</span> exits &ge; <span class="lit">3</span>: classify as <span class="acc">Junction</span></div>
+    <div class="line"><span class="cond">if</span> exits &le; <span class="lit">1</span>: classify as <span class="acc">DeadEnd</span></div>
+    <div class="line"><span class="cond">if</span> exits == <span class="lit">2</span> and angle between them &lt; <span class="lit">108 deg</span>: classify as <span class="acc">Corner</span></div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="cm">-- Step 2: Place nodes along every open direction --</span></div>
+    <div class="line"><span class="kw">for each</span> open direction:</div>
+    <div class="line indent-1"><span class="cond">if</span> ray hits max range (<span class="lit">95%</span>): place node at <span class="lit">75%</span> of max range</div>
+    <div class="line indent-1"><span class="cond">else</span>: place node at <span class="lit">range - 0.5m</span> (at least <span class="lit">1.5m</span> away)</div>
+    <div class="line indent-1"><span class="cond">skip if</span> center ray does not reach that distance</div>
+    <div class="line indent-1">create feature at computed position</div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="cm">-- Step 3: Detect side openings (range discontinuities) --</span></div>
+    <div class="line"><span class="kw">for each</span> ray pair with short-to-long jump &gt; threshold:</div>
+    <div class="line indent-1"><span class="cond">skip if</span> wall too close (&lt;<span class="lit">1.0m</span>) or too far (&gt;<span class="lit">90%</span> range)</div>
+    <div class="line indent-1">place Junction node at opening distance along the long ray</div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="cm">-- Deduplicate and filter --</span></div>
+    <div class="line">remove features within <span class="lit">1.0m</span> of known features (keep higher confidence)</div>
+    <div class="line">remove features within <span class="lit">1.0m</span> of each other in this batch</div>
+    <div class="line"><span class="kw">return</span> filtered features</div>
+  </div>
+</div>
+
+<!-- ── findOpenDirections ──────────────────────────────────────── -->
+
+<div class="section" id="fn-findOpenDirections">
+  <div class="section-header" onclick="toggle(this)">
+    <div class="toggle">+</div>
+    <div class="section-title">
+      <span class="func-name">findOpenDirections</span><span class="func-sig">(scan) &rarr; OpenDirection[]</span>
+      <span class="section-desc">Group long-range rays into corridor directions</span>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="line"><span class="cm">-- Threshold: rays reaching beyond 1.5m indicate open space --</span></div>
+    <div class="line">threshold = <span class="lit">1.5m</span></div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="cm">-- Group consecutive long rays (minimum 3 per group) --</span></div>
+    <div class="line"><span class="kw">for each</span> ray in scan:</div>
+    <div class="line indent-1"><span class="cond">if</span> range &gt; threshold: add to current group</div>
+    <div class="line indent-1"><span class="cond">else</span>: close group (if &ge; 3 rays), start new one</div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="cm">-- Wrap-around merge (first and last group may be contiguous) --</span></div>
+    <div class="line"><span class="cond">if</span> first and last groups' angles are within <span class="lit">0.2 rad</span>: merge them</div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="cm">-- Split wide groups at range peaks --</span></div>
+    <div class="line"><span class="kw">for each</span> group:</div>
+    <div class="line indent-1"><span class="cond">if</span> angular width &gt; <span class="lit">90 deg</span> and &gt; <span class="lit">20</span> rays:</div>
+    <div class="line indent-2"><span class="fn-ref" data-target="fn-findRangePeaks">findRangePeaks</span>(group) <span class="cm">-- each peak = one corridor direction</span></div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="kw">return</span> each group as { centerAngle, maxRange, angularWidth }</div>
+  </div>
+</div>
+
+<!-- ── findRangePeaks ──────────────────────────────────────────── -->
+
+<div class="section" id="fn-findRangePeaks">
+  <div class="section-header" onclick="toggle(this)">
+    <div class="toggle">+</div>
+    <div class="section-title">
+      <span class="func-name">findRangePeaks</span><span class="func-sig">(group) &rarr; subGroups[]</span>
+      <span class="section-desc">Split wide ray groups at local range maxima</span>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="line"><span class="cm">-- Smooth range values with window = 3 --</span></div>
+    <div class="line"><span class="kw">for each</span> ray: smoothed[i] = average of neighbors within +/-3</div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="cm">-- Find local maxima (peaks) --</span></div>
+    <div class="line"><span class="kw">for each</span> smoothed value (skip first/last 5):</div>
+    <div class="line indent-1"><span class="cond">if</span> value &gt; all 3 neighbors on each side:</div>
+    <div class="line indent-2"><span class="cond">and</span> value &gt; <span class="lit">2.0m</span>:</div>
+    <div class="line indent-2"><span class="cond">and</span> at least <span class="lit">15</span> rays from previous peak:</div>
+    <div class="line indent-3">record as peak</div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="cond">if</span> no peaks found:</div>
+    <div class="line indent-1"><span class="cm">-- Fallback to cardinal directions (N, E, S, W) --</span></div>
+    <div class="line indent-1"><span class="kw">for each</span> cardinal angle: find nearest ray, extract sub-group</div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="cond">otherwise</span>:</div>
+    <div class="line indent-1"><span class="kw">for each</span> peak: extract sub-group of +/-15 rays around peak center</div>
+    <div class="line"><span class="kw">return</span> sub-groups</div>
+  </div>
+</div>
+
+<!-- ================================================================== -->
+<!-- MODULE: MOTOR CONTROLLER -->
+<!-- ================================================================== -->
+
+<div class="module-header">
+  <h2>Motor Controller &mdash; Navigation</h2>
+  <div class="module-file">src/robot/navigation/motor-controller.ts</div>
+</div>
+
+<!-- ── driveToward ─────────────────────────────────────────────── -->
+
+<div class="section" id="fn-driveToward">
+  <div class="section-header" onclick="toggle(this)">
+    <div class="toggle">+</div>
+    <div class="section-title">
+      <span class="func-name">driveToward</span><span class="func-sig">(target, pose, scan, timestamp) &rarr; MotorCommand</span>
+      <span class="section-desc">Reactive navigation with wall avoidance and corridor centering</span>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="line">targetAngle = angle from robot to target (relative to heading)</div>
+    <div class="line">safetyMargin = robot_radius + <span class="lit">0.15m</span></div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="cm">-- EMERGENCY: something within safety margin --</span></div>
+    <div class="line">nearestAll = minimum range in full <span class="lit">180 deg</span> forward hemisphere</div>
+    <div class="line"><span class="cond">if</span> nearestAll &lt; safetyMargin:</div>
+    <div class="line indent-1">find angle of closest wall</div>
+    <div class="line indent-1">drive directly <span class="warn">AWAY</span> from closest wall</div>
+    <div class="line indent-1"><span class="kw">return</span> { linear: <span class="lit">0.3</span>, angular: awayAngle * <span class="lit">3.0</span> }</div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="cm">-- Check clearance toward target --</span></div>
+    <div class="line">targetClearance = min range in <span class="lit">+/-10 deg</span> cone toward target</div>
+    <div class="line"><span class="cond">if</span> targetClearance &gt; <span class="lit">1.0m</span>:</div>
+    <div class="line indent-1">steerAngle = targetAngle <span class="cm">-- go direct</span></div>
+    <div class="line"><span class="cond">else</span>:</div>
+    <div class="line indent-1">steerAngle = <span class="fn-ref" data-target="fn-findBestOpenDirection">findBestOpenDirection</span>(scan, targetAngle)</div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="cm">-- Speed proportional to clearance --</span></div>
+    <div class="line">aheadClear = min range in <span class="lit">+/-15 deg</span> of steer direction</div>
+    <div class="line">speedFraction = clamp((aheadClear - safetyMargin) / <span class="lit">2.0</span>, <span class="lit">0.1</span>, <span class="lit">1.0</span>)</div>
+    <div class="line">command = steer toward steerAngle, scale speed by speedFraction</div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="cm">-- Side wall avoidance (corridor centering) --</span></div>
+    <div class="line">leftMin = min range at <span class="lit">+90 deg</span></div>
+    <div class="line">rightMin = min range at <span class="lit">-90 deg</span></div>
+    <div class="line"><span class="cond">if</span> min(leftMin, rightMin) &lt; <span class="lit">0.8m</span>:</div>
+    <div class="line indent-1">push angular velocity toward the side with more room</div>
+    <div class="line indent-1"><span class="cond">if</span> very close (&lt; safetyMargin): reduce speed to <span class="lit">20%</span></div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="kw">return</span> command</div>
+  </div>
+</div>
+
+<!-- ── findBestOpenDirection ────────────────────────────────────── -->
+
+<div class="section" id="fn-findBestOpenDirection">
+  <div class="section-header" onclick="toggle(this)">
+    <div class="toggle">+</div>
+    <div class="section-title">
+      <span class="func-name">findBestOpenDirection</span><span class="func-sig">(scan, targetAngle) &rarr; { angle, range }</span>
+      <span class="section-desc">Sample 36 directions, pick closest to target with clearance</span>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="line"><span class="cm">-- Sample 36 evenly spaced directions (every 10 deg) --</span></div>
+    <div class="line"><span class="kw">for</span> i in <span class="lit">0..35</span>:</div>
+    <div class="line indent-1">sampleAngle = <span class="lit">-180 deg</span> + i * <span class="lit">10 deg</span></div>
+    <div class="line indent-1">clearance = min range in <span class="lit">+/-8 deg</span> cone around sampleAngle</div>
+    <div class="line indent-1"><span class="cond">if</span> clearance &gt; ahead_clear_threshold (<span class="lit">0.8m</span>):</div>
+    <div class="line indent-2">record as candidate with angleDiff from targetAngle</div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="cond">if</span> no candidates with enough clearance:</div>
+    <div class="line indent-1">pick the direction with maximum range (emergency escape)</div>
+    <div class="line blank"></div>
+
+    <div class="line"><span class="cond">otherwise</span>:</div>
+    <div class="line indent-1">pick the candidate closest to targetAngle</div>
+    <div class="line"><span class="kw">return</span> { angle, range }</div>
+  </div>
+</div>
+
+</main>
+
+<script>
+// ── Toggle ────────────────────────────────────────────────────────────
+
+function toggle(header) {
+  const section = header.parentElement;
+  const wasOpen = section.classList.contains('open');
+  section.classList.toggle('open');
+  header.querySelector('.toggle').textContent = wasOpen ? '+' : '−';
+}
+
+function expandAll() {
+  document.querySelectorAll('.section').forEach(s => {
+    s.classList.add('open');
+    s.querySelector('.toggle').textContent = '−';
+  });
+}
+
+function collapseAll() {
+  document.querySelectorAll('.section').forEach(s => {
+    s.classList.remove('open');
+    s.querySelector('.toggle').textContent = '+';
+  });
+}
+
+// ── Clickable function references ─────────────────────────────────────
+
+document.addEventListener('click', (e) => {
+  const ref = e.target.closest('.fn-ref');
+  if (!ref) return;
+  e.stopPropagation(); // Don't trigger section toggle
+
+  const targetId = ref.dataset.target;
+  if (!targetId) return;
+
+  const targetSection = document.getElementById(targetId);
+  if (!targetSection) return;
+
+  // Open the target section if closed
+  if (!targetSection.classList.contains('open')) {
+    targetSection.classList.add('open');
+    targetSection.querySelector('.toggle').textContent = '−';
+  }
+
+  // Scroll to it
+  targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // Brief highlight
+  targetSection.querySelector('.section-header').style.background = 'rgba(122, 162, 247, 0.15)';
+  setTimeout(() => {
+    targetSection.querySelector('.section-header').style.background = '';
+  }, 1500);
+});
+</script>
+
+</body>
+</html>
