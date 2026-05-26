@@ -173,6 +173,32 @@ export interface DetectedFeature {
 // Architecture-Aligned Enums
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Robot Behavior Modes
+// ---------------------------------------------------------------------------
+
+export enum BehaviorMode {
+  ExploreNew = "explore_new",
+  RecheckMap = "recheck_map",
+  ConsolidatePathing = "consolidate_pathing",
+  CheckStale = "check_stale",
+  CheckMainPathways = "check_main_pathways",
+  FindBoxes = "find_boxes",
+  Idle = "idle",
+  ReturnToStart = "return_to_start",
+}
+
+export const BEHAVIOR_MODE_LABELS: Record<BehaviorMode, string> = {
+  [BehaviorMode.ExploreNew]: "Explore New Areas",
+  [BehaviorMode.RecheckMap]: "Recheck Map",
+  [BehaviorMode.ConsolidatePathing]: "Consolidate Pathing",
+  [BehaviorMode.CheckStale]: "Check Stale Areas",
+  [BehaviorMode.CheckMainPathways]: "Check Main Pathways",
+  [BehaviorMode.FindBoxes]: "Find Boxes",
+  [BehaviorMode.Idle]: "Idle / Hold",
+  [BehaviorMode.ReturnToStart]: "Return to Start",
+};
+
 export enum StabilityClass {
   Static = "static",
   SemiStatic = "semi_static",

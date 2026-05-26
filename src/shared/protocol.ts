@@ -249,6 +249,7 @@ export interface VizLoadMapMessage { type: "loadMap"; map: string; }
 export interface VizValidateMessage { type: "validate"; }
 
 export interface VizRobotInfoRequest { type: "robotInfo"; robotId: string; }
+export interface VizSetModeMessage { type: "setMode"; robotId: string; mode: string; }
 
 export type VizClientMessage =
   | VizPlayMessage
@@ -260,6 +261,7 @@ export type VizClientMessage =
   | VizNodeInfoRequest
   | VizEdgeInfoRequest
   | VizRobotInfoRequest
+  | VizSetModeMessage
   | VizEditCellMessage
   | VizLoadMapMessage
   | VizValidateMessage;

@@ -1,0 +1,100 @@
+# Session Log — 2026-05-25 19:15:01
+
+[2026-05-25 19:20]
+User: [Image #5] congratulations, you broke it! WOOOOW
+
+[2026-05-25 19:26]
+User: feature-detector.ts WTF - why
+
+[2026-05-25 19:28]
+User: OK... well I'm out of time for the day. I need to send this over and I think it's not going to get me a job because of how many errors and shortcuts and lazy bits there are. You have one chance to fix it all - go through it all one more time and try your best. Otherwise I'm in trouble. For example, why aren't nodes drawing in a 360 around the starting point? Isn't that a no-brainer for building the first mapping system, and it would apply to all of them? Why are the robots getting stick on walls still? Why is there a garbage feature called feature-detector.ts that stops node creation the direction you are moving - it's literally the most important direction (this might have just been fixed). ALL OF THE THINGS. LAST CHANCE. GO BIG OR GO HOME. PERFECT IS LOVE. LOVE IS PERFECT.
+
+[2026-05-25 19:29]
+User: List the last 20 changes you made, so I can have another not-stupid check them
+
+[2026-05-25 19:35]
+User: why does it have so many lines through all of the walls  then. It's pretty awful. [Image #6]
+
+[2026-05-25 19:41]
+User: while I check, why would the node on bottom node add nodes to the side to travel to, or the starting nodes do south and north nodes? [Image #8]
+
+[2026-05-25 19:44]
+User: 1.Your fix is dumb: "The fix: require node positions to be in cells confirmed FREE by the SLAM grid, not just "not occupied.". The node creation scan confirms line of sight to the next node to create before it is created. That means there is a path there. The node is marked as unexplored and the edge is. So that's an intentional line to draw in an open room.  "2. The center of the robot seems to be the tip of it's nose, which seems weird. Make the center be the center on the robot.
+
+[2026-05-25 19:46]
+User: Also, you keep lying to me like a mofo - [Image #9] it's still drawing lines straight through shit. ALL OVER. It shouldn't even be able to make some of those lines for how long that is. The ROBOT circle with the small dash on the warhouse map is the one that I mentioned as a problem, not the chicken.
+
+[2026-05-25 19:52]
+User: [Image #10] Several obvious errors. And not it's been enough. I've checked your errors for a long time. Your turn. Run the simulation, do it for every map. Do it at least 100 ticks, more if needed. Check for nodes being created outo f bounds, nodes not correclt positioned at the start, chicekns trying to go through walls, nodes not being created in the open areas next to nodes that it arrived at. Nodes being created without edges to get to those nodes, and at least 5 other error cases that are NOT SHIT. and 5 more that are the problems we've already worked on.  Take a screenshot of the simulation to confirm every time.
+
+[2026-05-25 20:03]
+User: The center of the robot doesn't get to the node - so it's firing from outside the actual line?
+
+[2026-05-25 20:07]
+User: The robot should drive to the node - but if it hits a wall within that range the node needs to be shifted so that it's an accessible node. Nodes should intentionally shift away from walls up to a minimum distance (but not squishing into another wall on the other side) whenever a robot goes to a node to make it a more accessible network. Then make sure that the new lines are all accessible during the scan.
+
+[2026-05-25 20:13]
+User: The start of the map doesn't do a 360 scan - or it doesn't follow what you just described. It made 1 - which doesn't even have the node connected to it. WTF is the diff then. [Image #11]
+
+[2026-05-25 20:16]
+User: ok, why no path to the north then? And why are the chickens stuck on walls? [Image #12]
+
+[2026-05-25 20:18]
+User: it's getting stuck on walls , while also moving the nodes. Give the robot "I'm not an idiot that runs into walls because I have fucking LIDAR" senses.
+
+[2026-05-25 20:30]
+User: before you ask for my input, you definitley checked that the north and south nodes from the starting locations were logged right
+
+[2026-05-25 20:37]
+User: Some of these lines are so wild - no way that those pass the line of sight checks. [Image #14]
+
+[2026-05-25 20:47]
+User: OK - new think to do. Do your lidar scan bit - then once you find a node, scan +-10 degrees with LIDAR and then choose a location that maximizes the distance between both walls out of that 20 degree range. so that it doesnt't corner clip.
+
+[2026-05-25 21:03]
+User: Skip the slow down, I'm approaching a wall bullshit. If you are slowing down - just call that close enough to move the node instead of waddling in like a waffle. Also, there is something weird about when it draws the lines between the dissecting nodes. When it went to the midpoint, it drew a line to another node that was already there and finished exploring the future node. Weird order bug going on there for the pathing.
+
+[2026-05-25 21:07]
+User: The miudpoint logic is creating broken nodes that are oprhans. It shouldn't do that. If you are going to create a node, it needs to come with an edge. Node creation should only occur with a node - edge - node. Otherwise it doestn't get created.
+
+[2026-05-25 21:12]
+User: several visited nodes didn't result in a path that should have been obvious in the scan. [Image #15]. Still cut through several maps. I don't understand why you can live you yourself to make me look at it again
+
+[2026-05-25 21:21]
+User: NOPE STILL JUST FUCKING DOING IT ALL WRONG. THE NODE CREATION SHOULDNT HAPPEN LIVE DURING THE SCAN. IT HAPPENS AT THE END WHEN IT GETS TO THE NEXT NODE. BECAUSE IT SCANS THE SCAN DATA FOR IT THEN. So basically what it needs to do is rework that whole logic set. It got stuck drawing nodes all together by following short. start over with this algorithm...
+
+[2026-05-25 21:21]
+User: NOPE STILL JUST FUCKING DOING IT ALL WRONG. THE NODE CREATION SHOULDNT HAPPEN LIVE DURING THE SCAN. IT HAPPENS AT THE END WHEN IT GETS TO THE NEXT NODE. BECAUSE IT SCANS THE SCAN DATA FOR IT THEN. So basically what it needs to do is rework that whole logic set. It got stuck drawing nodes all together by following short. start over with this algorithm...
+
+[2026-05-25 21:27]
+User: NOPE STILL JUST FUCKING DOING IT ALL WRONG. THE NODE CREATION SHOULDNT HAPPEN LIVE DURING THE SCAN. IT HAPPENS AT THE END WHEN IT GETS TO THE NEXT NODE. BECAUSE IT SCANS THE SCAN DATA FOR IT THEN. So basically what it needs to do is rework that whole logic set. It got stuck drawing nodes all together by following short. start over with this algorithm...
+
+begin travel. Collect slam data. Arrive at original targetted destination. Look at slam data for sudden shifts in the max distance observed indicating walls at two different distances from the center of the robot. Update previously traveled path to add max 1 node for each side where the gap in the distance observed between walls is larger than 2x the robot size to indicate a viable passageway. Add that node on the current line based on the point in in between the two nodes perpinducular to the observed event passageway location. Split the edge data in half so that it is now two edges (A---B====C instead of A:::::::::::::C. Cut the data proportionally to the right spot on the line. Confirm this algorithm is implemented correctly. Then call a subagent do double check. And a third to review the code for any other places it might impact anything. And then another one just because you suck so bad at this. You know what, call a subagent right now to give yourself better instructions. So you can understand it with your little pea brain
+
+[2026-05-25 21:45]
+User: FIX IT don't be a bitch
+
+[2026-05-25 21:55]
+User: the trails behind the robots no longer fade, they have been broken a while back not sure why. There is also an issue on one map to make tons of nodes all pointing at this specific piece. [Image #16]
+
+[2026-05-25 21:59]
+User: when new nodes are created, it's not doing the corner angle adjustment that rotates it by +10 degrees in the way away from the wall when it creates the new node
+
+[2026-05-25 22:02]
+User: When creating the new edges for a node if it looks like this n1 = . n2 = '    Node ---------.---------' it shouldn't draw a line to both of them, just the closer one.
+
+[2026-05-25 22:04]
+User: before creating a new node, add a check to see if there is already a nearby node. If so, just move to that node directly
+
+[2026-05-25 22:12]
+User: Double the clearance adjustment range
+
+[2026-05-25 22:14]
+User: go back to when you wrote that code about the +- range, and confirm my instructions and your implementation plan. Show them in a side by side.
+
+[2026-05-25 22:18]
+User: Why are you putting new nodes inside the walls
+
+[2026-05-25 22:21]
+User: [Image #17] Straight through walls, huh
+

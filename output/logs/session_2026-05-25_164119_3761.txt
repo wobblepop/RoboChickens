@@ -1,0 +1,44 @@
+# Session Log — 2026-05-25 16:41:19
+
+[2026-05-25 16:54]
+User: aight, let's take a break
+
+[2026-05-25 16:57]
+User: start the server so I can test it , then wait
+
+[2026-05-25 16:58]
+User: I'm on map 5, so is 1 also running? Does the server run a hidden instance too?
+
+[2026-05-25 17:15]
+User: restart the server, and then we need to add the functionality back in to trim edges/nodes over time as the information updates like boxes/walls are moved
+
+[2026-05-25 17:16]
+User: <task-notification>
+<task-id>bub16pxnc</task-id>
+<tool-use-id>toolu_015R3WG6gr5ip5F9yqzKXuGz</tool-use-id>
+<output-file>C:\Users\scott\AppData\Local\Temp\claude\C--Users-scott-QuarantineZone-Robots\70762d8a-81f0-4523-8bbb-cabd491f5062\tasks\bub16pxnc.output</output-file>
+<status>completed</status>
+<summary>Background command "Test with grid-frontier priority over random edges" completed (exit code 0)</summary>
+</task-notification>
+
+[2026-05-25 17:17]
+User: <task-notification>
+<task-id>bd9ova6li</task-id>
+<tool-use-id>toolu_01BDigAUQEtztZaxXfEqvyu2</tool-use-id>
+<output-file>C:\Users\scott\AppData\Local\Temp\claude\C--Users-scott-QuarantineZone-Robots\70762d8a-81f0-4523-8bbb-cabd491f5062\tasks\bd9ova6li.output</output-file>
+<status>failed</status>
+<summary>Background command "Start the visualization server" failed with exit code 127</summary>
+</task-notification>
+
+[2026-05-25 17:21]
+User: The plan is as follows: After completing the edge traversal, the SLAM map should add nodes where features might exist - for example, something goes from marked edges to open areas (corridor that it passed). If the robot can see that node from the current location, it can draw an edge to it. If not, then it can add a node along the path that was just traversed perpindicular to the new node location (so o-----|!!|------o it would add a node at !! and then also at the 75% edge of it's vision, and an edge to the !! node and the new node.
+
+[2026-05-25 17:23]
+User: Edges that are blocked but used to exist as clear should not disappear, but be bept as blocked (see the old files for refrence, i believe this logic was already there).
+
+[2026-05-25 17:27]
+User: The keys cover up some of the map, make them minimizable and start minimized
+
+[2026-05-25 17:30]
+User: When the map is edited in the .html, it should edit the map on the server allowed updates to occur and chickens to not see past them. The robots also seem to be slightly desynced from the trailing path, and so there is an issue with that as well. When a robot stops at a node, all visible nodes from that location without an edge should have an edge to the current location. Confirm that is happening.
+

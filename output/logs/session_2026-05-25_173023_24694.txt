@@ -1,0 +1,41 @@
+# Session Log — 2026-05-25 17:30:23
+
+[2026-05-25 17:35]
+User: There seems to be a mismatch between the edges/nodes and the SLAM layer data. Since unvisited nodes have slam data, which they shouldn't. SLAM data should be generated as the robot travels along an edge - mapping it as it moves, and it should be generated on the node during the scanning phase.
+
+[2026-05-25 17:38]
+User: I cant see the map data on a lot of the nodes when I click on them, it should be at the top and the rest of the details scrollable
+
+[2026-05-25 17:43]
+User: [Image #1]
+
+[2026-05-25 17:44]
+User: did the shortest path work?
+
+[2026-05-25 17:48]
+User: The robots cheat when I give them a target - how do they path straight to a target not near their nodes?
+
+[2026-05-25 17:52]
+User: Robots should travel to the target only through the node network, not a straight line. And they should update their mapping every node to see new edges/blocked edges and update the SLAM data every edge as well.
+
+[2026-05-25 17:58]
+User: I loaded map 03, and the toplogy graph was wild, jumping all over. There is also an alignment issue on the map overlap. Check all rendering and mapping levels (map, toplogy overlay, tolology graph, robot position, robot trail, the true map, and a couple of slam maps to confirm)
+
+[2026-05-25 18:03]
+User: <task-notification>
+<task-id>bz6mnflfw</task-id>
+<tool-use-id>toolu_01LqF16r2764q8hhCDrg9pNc</tool-use-id>
+<output-file>C:\Users\scott\AppData\Local\Temp\claude\C--Users-scott-QuarantineZone-Robots\4b271b19-7a21-4b8f-bcb3-c649e76acda8\tasks\bz6mnflfw.output</output-file>
+<status>failed</status>
+<summary>Background command "Start server after TIME_WAIT clears" failed with exit code 1</summary>
+</task-notification>
+
+[2026-05-25 18:05]
+User: Does speed do anything on the slider?
+
+[2026-05-25 18:10]
+User: OK, so there is an issue with slam drift now - go through all of the functionality for this model, the previous one and consider how slam drift is managed and how it should be managed. What are the ways that we can auto-correct nodes for slam drift (One idea is that every time the robot redraws a SLAM map, it compares the overlaid SLAM map that it drew with the other overlapping SLAM maps (X--->Y--->Z ... if a robot goes from X to Y, then it compares the new path drawn XY at the end of drawing against the Y map and the YZ map and makes an X,Y adjustment based on a weighted reliability score of the other two maps). Perhaps a basic matrix statistics check that minimizes the squared error of the difference afterwards?
+
+[2026-05-25 18:11]
+User: The nearest button doesn't work on the html, and also when you select a target it should unselect the edit button.
+

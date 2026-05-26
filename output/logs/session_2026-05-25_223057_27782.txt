@@ -1,0 +1,118 @@
+# Session Log — 2026-05-25 22:30:57
+
+[2026-05-25 22:37]
+User: we got really far, but it's just too many little bugs in the code where you I said... "Do A, B, C" and you said OK and did "E" or just A and B. And that's fucked us so hard in the ass that I'm in danger of exploding. I don't know what to do... but I hope you can save me. I think the code has enough that you can see what it SHOULD do. Maybe that's enough to recreate it as first pseudo-code algorithm. Then make sure the implementation is correct. Let's start by taking it at a very high level. Break the code down into a pseudo code structure. Visualize the code with nested structure in HTML, so I can see the function calls in each function and expand them each if I want. You are going to need subagents for it. Some will help with the review, some with the pseudocode, some with the rebuild and fixes. Some looking for shortcuts and cheats that you added. It's just... we are so close. There are a few areas that are sticky and we couldn't solve. Node creation leads to edge clippinmg, which I tried to solve with a +-10 degree adjustment for the angle. Nodes creating in walls, which I solved many times but keeps coming back. Corner tracking/wall collision was rough. Some of these have ductape fixes (mostly beacuse you didn't listen to me or I gave up and tried to fix it with another approach because you wouldn't do it). It's wild that this has been so hard. Here is what I need now. new workflow. Replace Bordeaux with RoboChickens
+
+[2026-05-25 22:57]
+User: reset the server with the newest build and continue
+
+[2026-05-25 23:03]
+User: <task-notification>
+<task-id>bl3iqpl3s</task-id>
+<tool-use-id>toolu_01RpbE2XwCddRcPToGxxv8k4</tool-use-id>
+<output-file>C:\Users\scott\AppData\Local\Temp\claude\C--Users-scott-QuarantineZone-Robots\4b271b19-7a21-4b8f-bcb3-c649e76acda8\tasks\bl3iqpl3s.output</output-file>
+<status>completed</status>
+<summary>Background command "Start server" completed (exit code 0)</summary>
+</task-notification>
+
+[2026-05-25 23:06]
+User: <task-notification>
+<task-id>ba5ofrue0</task-id>
+<tool-use-id>toolu_01CNXirD2GLz65SBaJzDUDjM</tool-use-id>
+<output-file>C:\Users\scott\AppData\Local\Temp\claude\C--Users-scott-QuarantineZone-Robots\4b271b19-7a21-4b8f-bcb3-c649e76acda8\tasks\ba5ofrue0.output</output-file>
+<status>completed</status>
+<summary>Background command "Start server" completed (exit code 0)</summary>
+</task-notification>
+
+[2026-05-25 23:08]
+User: <task-notification>
+<task-id>b9hi256af</task-id>
+<tool-use-id>toolu_01GbiEXkobiUPfqbToViAns2</tool-use-id>
+<output-file>C:\Users\scott\AppData\Local\Temp\claude\C--Users-scott-QuarantineZone-Robots\4b271b19-7a21-4b8f-bcb3-c649e76acda8\tasks\b9hi256af.output</output-file>
+<status>completed</status>
+<summary>Background command "Build and start server" completed (exit code 0)</summary>
+</task-notification>
+
+[2026-05-25 23:21]
+User: need to add a thing for each robot to track how far off the robot is from where it thinks it is. The offset captures it's shifted location but not where it thinks it is
+
+[2026-05-25 23:22]
+User: <task-notification>
+<task-id>b08wlrro1</task-id>
+<tool-use-id>toolu_01TK5SMq4c9425GBeFXsFfNd</tool-use-id>
+<output-file>C:\Users\scott\AppData\Local\Temp\claude\C--Users-scott-QuarantineZone-Robots\4b271b19-7a21-4b8f-bcb3-c649e76acda8\tasks\b08wlrro1.output</output-file>
+<status>completed</status>
+<summary>Background command "Start server with drift tracking" completed (exit code 0)</summary>
+</task-notification>
+
+[2026-05-25 23:24]
+User: Slam drift doesn't seem to be calculating correctly - it's staying the adjusted difference - which isn't a measure of inaccuracy since it starts with a simple trsnposition that isn't inaccurate, just an unknown coordinate match
+
+[2026-05-25 23:26]
+User: <task-notification>
+<task-id>bu0ts5fxj</task-id>
+<tool-use-id>toolu_01ErsWvegFKjrw1QGMV9iW7j</tool-use-id>
+<output-file>C:\Users\scott\AppData\Local\Temp\claude\C--Users-scott-QuarantineZone-Robots\4b271b19-7a21-4b8f-bcb3-c649e76acda8\tasks\bu0ts5fxj.output</output-file>
+<status>completed</status>
+<summary>Background command "Start server with corrected drift" completed (exit code 0)</summary>
+</task-notification>
+
+[2026-05-25 23:27]
+User: i don't see pos error
+
+[2026-05-25 23:28]
+User: [Image #18]
+
+[2026-05-25 23:29]
+User: <task-notification>
+<task-id>b2lu763in</task-id>
+<tool-use-id>toolu_0174eY6kNpGN4Eji8zeDWFbh</tool-use-id>
+<output-file>C:\Users\scott\AppData\Local\Temp\claude\C--Users-scott-QuarantineZone-Robots\4b271b19-7a21-4b8f-bcb3-c649e76acda8\tasks\b2lu763in.output</output-file>
+<status>completed</status>
+<summary>Background command "Start server" completed (exit code 0)</summary>
+</task-notification>
+
+[2026-05-25 23:30]
+User: ok, add back in some noise
+
+[2026-05-25 23:32]
+User: <task-notification>
+<task-id>b2krwal9m</task-id>
+<tool-use-id>toolu_017xJx6GQcE1Vt4heQdJszPy</tool-use-id>
+<output-file>C:\Users\scott\AppData\Local\Temp\claude\C--Users-scott-QuarantineZone-Robots\4b271b19-7a21-4b8f-bcb3-c649e76acda8\tasks\b2krwal9m.output</output-file>
+<status>completed</status>
+<summary>Background command "Start server with noise" completed (exit code 0)</summary>
+</task-notification>
+
+[2026-05-25 23:32]
+User: Fix the simulation, not the noise. Give more grace, error handlinge, route management, updates to node positions once it's determined that it's inside a way.
+
+[2026-05-25 23:36]
+User: <task-notification>
+<task-id>bsf7s2u5v</task-id>
+<tool-use-id>toolu_01SUkn7nrrXUiYQbweiJ9axn</tool-use-id>
+<output-file>C:\Users\scott\AppData\Local\Temp\claude\C--Users-scott-QuarantineZone-Robots\4b271b19-7a21-4b8f-bcb3-c649e76acda8\tasks\bsf7s2u5v.output</output-file>
+<status>completed</status>
+<summary>Background command "Start server" completed (exit code 0)</summary>
+</task-notification>
+
+[2026-05-25 23:39]
+User: why can the chickens travel through walls
+
+[2026-05-25 23:41]
+User: <task-notification>
+<task-id>bfxyko6zs</task-id>
+<tool-use-id>toolu_01MCSAJjp1ay8aSKZ5a4oQso</tool-use-id>
+<output-file>C:\Users\scott\AppData\Local\Temp\claude\C--Users-scott-QuarantineZone-Robots\4b271b19-7a21-4b8f-bcb3-c649e76acda8\tasks\bfxyko6zs.output</output-file>
+<status>completed</status>
+<summary>Background command "Start server with actual-position rendering" completed (exit code 0)</summary>
+</task-notification>
+
+[2026-05-25 23:49]
+User: There are some phasing issues, possibly due to a high position error. Add several different logical tests to give the robots - from "Explore New Areas", "Recheck Map", "Consolidate Pathing", "Check Stale Areas", "Check Main Pathways", "Find Boxes", and other modes that might be useful for different test cases. Let each robot have a dropdown to change behavior. THis is a major extension so Do not implement any of these until they've been rigorously tested and evaluated. But go through and create those. Let's push to github first, as "RoboChickens"
+
+[2026-05-25 23:53]
+User: Something happened to the edge tests and collissions - I think there is an issue with the coordinate systems mapping. Go through the code for EVERY coordinate reference, note which refernce it is  using, and confirm it is accurate. Show a table of each one. Add several different goals/pathing strategies to give the robots - from "Explore New Areas", "Recheck Map", "Consolidate Pathing", "Check Stale Areas", "Check Main Pathways", "Find Boxes",
+  and other modes that might be useful for different test cases. Let each robot have a dropdown to change behavior. THis is a major extension so Do not implement any of these until they've been rigorously tested and evaluated. But go through and
+  create those. Let's push to github first, as "RoboChickens". Look for different ways to improve pathings both for a network level, and a local pathing level. Add a implementation plan to develop a localized map that can be opened for every robot that stitches together the SLAM maps for either a radius around them, or the planned route (Node A to Node B) with every node/edge stitched together for a high fidelity route map.
+

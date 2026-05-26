@@ -22,7 +22,9 @@ import type {
   NetworkEdge,
   SimulationConfig,
 } from "../shared/types";
-import { DEFAULT_SIMULATION_CONFIG, FeatureType, EdgeStatus, confidenceTierFromScore } from "../shared/types";
+import { DEFAULT_SIMULATION_CONFIG, FeatureType, EdgeStatus, BehaviorMode, confidenceTierFromScore } from "../shared/types";
+import { chooseBehaviorTarget, createBehaviorState } from "./behavior/behavior-modes";
+import type { BehaviorState } from "./behavior/behavior-modes";
 import { vec2Distance, normalizeAngle } from "../shared/math";
 import { TypedEventEmitter } from "../shared/events";
 
@@ -131,6 +133,9 @@ export class RobotAgent {
   // Manual target: multi-hop path through the graph.
   // Consumed one hop at a time, with a full scan cycle at each node.
   private manualPathQueue: { nodeId: string; edgeId: string }[] = [];
+
+  // Behavior mode
+  private behaviorState: BehaviorState = createBehaviorState();
 
   constructor(id: string, config: SimulationConfig = DEFAULT_SIMULATION_CONFIG) {
     this.id = id;
@@ -276,6 +281,9 @@ export class RobotAgent {
         this.events.emit("node_created", { node, feature: startFeature });
       }
       this.currentNodeId = node.id;
+      if (!this.behaviorState.startingNodeId) {
+        this.behaviorState.startingNodeId = node.id;
+      }
       this.nodeManager.createNodeMap(node.id, startFeature, this.slam.grid, scan);
     }
 
@@ -571,37 +579,39 @@ export class RobotAgent {
       }
     }
 
-    // Normal exploration priority
-    const choice = this.graph.chooseExplorationEdge(this.currentNodeId);
-
-    // If no unexplored graph nodes exist, grid frontiers represent real unknown
-    // territory — prioritize them over traversing already-explored edges
-    const hasUnexploredGraphNodes = this.graph.getUnexploredNodes().length > 0;
-    if (!hasUnexploredGraphNodes || !choice || choice.reason === "random") {
-      const gridTarget = this.findGridFrontier(pose);
-      if (gridTarget) {
-        this.targetPosition = gridTarget;
-        this.targetNodeId = null;
-        this.activeEdgeId = null;
-        this.beginTravel(pose, scan.timestamp);
-        this.setPhase(ExplorationPhase.TRAVELING, "grid_frontier");
-        return this.motor.stop(scan.timestamp);
-      }
-      if (!choice) {
-        this.scanTicksRemaining = 20;
-        this.setPhase(ExplorationPhase.SCANNING, "no_edges_retry");
-        return this.motor.stop(scan.timestamp);
-      }
-    }
-
-    const targetNode = this.graph.getOtherNode(choice!.edge, this.currentNodeId);
-    if (!targetNode) {
-      this.scanTicksRemaining = 5;
-      this.setPhase(ExplorationPhase.SCANNING, "edge_target_missing");
+    // Idle mode: stop and wait
+    if (this.behaviorState.mode === BehaviorMode.Idle) {
       return this.motor.stop(scan.timestamp);
     }
 
-    return this.beginHopTo(targetNode, choice!.edge, pose, scan.timestamp, choice!.reason);
+    // Behavior mode target selection
+    const modeChoice = chooseBehaviorTarget(
+      this.behaviorState, this.currentNodeId, this.graph, pose, this.tickCount,
+    );
+
+    // If mode returned a target, use it
+    if (modeChoice) {
+      const targetNode = this.graph.getOtherNode(modeChoice.edge, this.currentNodeId);
+      if (targetNode) {
+        return this.beginHopTo(targetNode, modeChoice.edge, pose, scan.timestamp, modeChoice.reason);
+      }
+    }
+
+    // Fallback: grid frontier exploration (for any mode that returned null)
+    const gridTarget = this.findGridFrontier(pose);
+    if (gridTarget) {
+      this.targetPosition = gridTarget;
+      this.targetNodeId = null;
+      this.activeEdgeId = null;
+      this.beginTravel(pose, scan.timestamp);
+      this.setPhase(ExplorationPhase.TRAVELING, "grid_frontier");
+      return this.motor.stop(scan.timestamp);
+    }
+
+    // Nothing to do — wait and retry
+    this.scanTicksRemaining = 20;
+    this.setPhase(ExplorationPhase.SCANNING, "no_targets_retry");
+    return this.motor.stop(scan.timestamp);
   }
 
   private beginHopTo(
@@ -1729,6 +1739,7 @@ export class RobotAgent {
     tickCount: number;
     nodesDiscovered: number;
     edgesDiscovered: number;
+    behaviorMode: BehaviorMode;
   } {
     return {
       status: this.phase,
@@ -1740,7 +1751,16 @@ export class RobotAgent {
       tickCount: this.tickCount,
       nodesDiscovered: this.graph.nodeCount,
       edgesDiscovered: this.graph.edgeCount,
+      behaviorMode: this.behaviorState.mode,
     };
+  }
+
+  setBehaviorMode(mode: BehaviorMode): void {
+    this.behaviorState.mode = mode;
+  }
+
+  getBehaviorMode(): BehaviorMode {
+    return this.behaviorState.mode;
   }
 
   setManualTarget(position: Vec2): void {
@@ -1805,6 +1825,7 @@ export class RobotAgent {
     this.corridorScanLog = [];
     this.lastCorridorSamplePos = { x: 0, y: 0 };
     this.manualPathQueue = [];
+    this.behaviorState = createBehaviorState();
     this.alignmentEstablished = false;
   }
 

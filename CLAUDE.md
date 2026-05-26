@@ -67,14 +67,15 @@ This workflow applies to any task that changes code (new features, bug fixes, re
 
 | File | Purpose |
 |------|---------|
-| `src/robot/robot-agent.ts` | Main exploration loop, node creation, LOS checks |
+| `src/robot/robot-agent.ts` | Main exploration loop, node creation, LOS checks, mode dispatch |
+| `src/robot/behavior/behavior-modes.ts` | 8 behavior mode strategy functions |
 | `src/robot/network/network-graph.ts` | Topological graph, exploration state, pathfinding |
 | `src/robot/feature-detection/feature-detector.ts` | LiDAR scan analysis, corridor direction detection |
 | `src/robot/navigation/motor-controller.ts` | Wall avoidance, steering, corridor centering |
 | `src/robot/slam/particle-filter.ts` | 30-particle SLAM, scan matching at node arrivals only |
 | `src/robot/slam/inverse-sensor-model.ts` | Occupancy grid updates with wall thickening |
 | `src/world/world-server.ts` | Simulation server, ground truth, visualization |
-| `public/index.html` | Browser UI, topology graph, map editing |
+| `public/index.html` | Browser UI, topology graph, map editing, mode dropdowns |
 
 ### Key Rules (hard-won, do NOT violate)
 
@@ -99,11 +100,39 @@ These were designed but never wired in, or solved problems that don't exist with
 - ExplorationStrategy, RegressionController, GraphMerger, PathPlanner
 - LoopClosureDetector, DriftCorrector, ConsistencyEngine
 
+### Behavior Modes (per-robot, runtime-switchable)
+
+| Mode | Strategy |
+|------|----------|
+| Explore New Areas | BFS toward unexplored nodes, untraveled edges, grid frontiers (default) |
+| Recheck Map | Revisit oldest explored nodes to correct drift and verify edges |
+| Consolidate Pathing | Travel untraveled edges to verify speculative connections |
+| Check Stale Areas | Target low-confidence (Candidate/Provisional) entities |
+| Check Main Pathways | Patrol high-traffic edges and junction nodes |
+| Find Boxes | Explore areas with unclassified obstacles and unexplored neighbors |
+| Idle / Hold | Stop at current node, continue collecting LiDAR data |
+| Return to Start | Navigate back to starting node via shortest path |
+
+Mode is selectable per robot via UI dropdown. WebSocket message: `{ type: "setMode", robotId, mode }`.
+
+### Design Documents
+
+| Document | Contents |
+|----------|----------|
+| `BEHAVIOR-MODES.md` | Detailed mode descriptions, priorities, test criteria |
+| `PATHING-IMPROVEMENTS.md` | 10 pathing improvements (network + local), priority ranked |
+| `STITCHED-MAP-DESIGN.md` | Stitched SLAM map viewer (radius + route modes), algorithm, implementation plan |
+| `coordinate-audit.md` | Full coordinate system audit (180 references, 0 bugs) |
+| `audit-report.md` | Original codebase audit with fix status |
+| `pseudocode-viewer.html` | Expandable pseudocode visualization for presentation |
+
 ### Known Issues
 
-- 0 errors across all 10 maps (as of 2026-05-25)
+- 0 errors across all 10 maps with zero noise (as of 2026-05-26)
+- With noise enabled: ~10 errors per run from SLAM drift (expected)
 - 18 warnings: starting nodes lack SLAM data (tick 1 skips processSensorData)
 - Corner pathing (waypoint nodes at corners) not yet implemented
+- Robot display uses actual position (not believed) to prevent wall clipping
 
 ### Diagnostics
 

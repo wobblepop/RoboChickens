@@ -19,7 +19,7 @@ import type {
   NetworkNode,
   NetworkEdge,
 } from "../shared/types";
-import { DEFAULT_SIMULATION_CONFIG, CellType } from "../shared/types";
+import { DEFAULT_SIMULATION_CONFIG, CellType, BehaviorMode, BEHAVIOR_MODE_LABELS } from "../shared/types";
 import type {
   VizInitMessage,
   VizFrameMessage,
@@ -187,8 +187,10 @@ export class WorldServer {
   // -------------------------------------------------------------------------
 
   private sendInit(ws: WebSocket): void {
-    const msg: VizInitMessage = {
+    const msg: any = {
       type: "init",
+      behaviorModes: BEHAVIOR_MODE_LABELS,
+      robotModes: Object.fromEntries(this.robots.map(r => [r.id, r.agent.getBehaviorMode()])),
       data: {
         grid: this.world.getGridStrings(),
         width: this.world.width,
@@ -557,7 +559,21 @@ export class WorldServer {
             tickCount: info.tickCount,
             nodesDiscovered: info.nodesDiscovered,
             edgesDiscovered: info.edgesDiscovered,
+            behaviorMode: info.behaviorMode,
           }));
+        }
+        break;
+      }
+
+      case "setMode": {
+        const robot = this.robots.find((r) => r.id === msg.robotId);
+        if (robot && (Object.values(BehaviorMode) as string[]).includes(msg.mode)) {
+          robot.agent.setBehaviorMode(msg.mode as BehaviorMode);
+          this.broadcastToViz({
+            type: "modeChanged",
+            robotId: msg.robotId,
+            mode: msg.mode,
+          });
         }
         break;
       }

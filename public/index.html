@@ -46,6 +46,7 @@ header h1{font-size:16px;font-weight:500;color:var(--gold);white-space:nowrap}
 .robot-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 .robot-name{font-weight:500}
 .robot-info{color:var(--text-dim)}
+.mode-select{background:var(--bg-panel);color:var(--text);border:1px solid var(--border);border-radius:3px;padding:2px 4px;font-size:11px;margin-left:4px;cursor:pointer}
 .status-badge{display:inline-block;padding:1px 6px;border-radius:3px;font-size:11px;background:var(--border);color:var(--text)}
 .status-badge.exploring{background:#0F6E56;color:#E1F5EE}
 .status-badge.idle{background:var(--border);color:var(--text-dim)}
@@ -219,8 +220,17 @@ header h1{font-size:16px;font-weight:500;color:var(--gold);white-space:nowrap}
     ws.onmessage = (e) => {
       let msg;
       try { msg = JSON.parse(e.data); } catch { return; }
-      if (msg.type === 'init') handleInit(msg.data);
+      if (msg.type === 'init') {
+        if (msg.behaviorModes) behaviorModes = msg.behaviorModes;
+        if (msg.robotModes) robotModes = msg.robotModes;
+        handleInit(msg.data);
+      }
       else if (msg.type === 'frame' || msg.type === 'complete') handleFrame(msg.data);
+      else if (msg.type === 'modeChanged') {
+        robotModes[msg.robotId] = msg.mode;
+        const selects = document.querySelectorAll('.mode-select[data-robot-id="'+msg.robotId+'"]');
+        selects.forEach(s => s.value = msg.mode);
+      }
       else if (msg.type === 'nodeInfo') handleNodeInfo(msg.data);
       else if (msg.type === 'edgeInfo') handleEdgeInfo(msg.data);
       else if (msg.type === 'robotInfo') showRobotInfoPopup(msg);
@@ -441,6 +451,7 @@ header h1{font-size:16px;font-weight:500;color:var(--gold);white-space:nowrap}
     let html = '<h3>Robot ' + (info.robotId || '?') + ' <button class="close-btn" id="close-node-info">&times;</button></h3>';
     html += '<div class="node-info-details">';
     html += row('Status', info.status || '?');
+    html += row('Mode', (behaviorModes[info.behaviorMode] || info.behaviorMode || '?'));
     html += row('Actual pos', fmtPos(info.worldPose) + fmtAngle(info.worldPose));
     html += row('Believed pos', fmtPos(info.believedPose) + fmtAngle(info.believedPose));
     html += row('SLAM pos', fmtPos(info.slamPose) + fmtAngle(info.slamPose));
@@ -947,6 +958,9 @@ header h1{font-size:16px;font-weight:500;color:var(--gold);white-space:nowrap}
     }
   }
 
+  let behaviorModes = {};
+  let robotModes = {};
+
   function buildRobotStatusBar(robots){
     const bar = document.getElementById('robots-bar');
     bar.innerHTML = '';
@@ -955,11 +969,26 @@ header h1{font-size:16px;font-weight:500;color:var(--gold);white-space:nowrap}
       const div = document.createElement('div');
       div.className = 'robot-status';
       div.id = 'robot-'+i;
+
+      let modeSelect = '<select class="mode-select" data-robot-id="'+r.id+'">';
+      for(const [val, label] of Object.entries(behaviorModes)){
+        const selected = (robotModes[r.id] === val) ? ' selected' : '';
+        modeSelect += '<option value="'+val+'"'+selected+'>'+label+'</option>';
+      }
+      modeSelect += '</select>';
+
       div.innerHTML = '<span class="robot-dot" style="background:'+ROBOT_COLORS[i%ROBOT_COLORS.length]+'"></span>'
         +'<span class="robot-name">'+(r.id||'Robot '+(i+1))+'</span>'
         +'<span class="status-badge">idle</span>'
-        +'<span class="robot-info"></span>';
+        +modeSelect
+        +'<br><span class="robot-info"></span>';
       bar.appendChild(div);
+
+      div.querySelector('.mode-select').addEventListener('change', function(e){
+        const robotId = e.target.dataset.robotId;
+        const mode = e.target.value;
+        if(ws) ws.send(JSON.stringify({type:'setMode', robotId, mode}));
+      });
     }
   }
 

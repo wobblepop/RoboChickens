@@ -1,0 +1,11 @@
+# Session Log — 2026-05-25 15:29:52
+
+[2026-05-25 15:42]
+User: [Image #3] I just ran a simulation and it made this node top left, then connect it, but it should not be able to connect those two nodes. The right one is the starting position
+
+[2026-05-25 15:46]
+User: There is leakage between the robots, even though they are supposed to be on completely different networks. Why are they not on different networks? Target nodes are robot specific, not globals
+
+[2026-05-25 15:56]
+User: did you update the claude.md file?
+

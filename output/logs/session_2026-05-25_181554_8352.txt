@@ -1,0 +1,26 @@
+# Session Log — 2026-05-25 18:15:54
+
+[2026-05-25 18:17]
+User: 1. Clicking on an edge should show the SLAM data. 2. On the zigzag map, the robots go wild. Insane node creation and pathing. No ide what is going on, it's broken as fuck. 3. Report a score for every time the SLAM data is written for the consistency including the X,Y adjustment and the statistical calculation.
+
+[2026-05-25 18:33]
+User: In turn 1, slam drift is already WAY high. Check it at turn 2
+
+[2026-05-25 18:34]
+User: <task-notification>
+<task-id>bb4d6994i</task-id>
+<tool-use-id>toolu_019KyYX9zm271egkYrW7ocHf</tool-use-id>
+<output-file>C:\Users\scott\AppData\Local\Temp\claude\C--Users-scott-QuarantineZone-Robots\4b271b19-7a21-4b8f-bcb3-c649e76acda8\tasks\bb4d6994i.output</output-file>
+<status>failed</status>
+<summary>Background command "Start server" failed with exit code 127</summary>
+</task-notification>
+
+[2026-05-25 18:35]
+User: WTF IS THIS "Corridor map loading..."
+
+[2026-05-25 18:38]
+User:  The edge corridor map lookup is fixed — the completed edge data now gets tagged with the actual graph edge ID so getCorridorMapForEdge() can find it. Clicking a traveled edge should now show the actual SLAM corridor data. - THIS FEELS LIKE CHEATING. ARE YOU CHEATING
+
+[2026-05-25 18:41]
+User: Why does slam drift start so high - check at tick 1 or 2
+
